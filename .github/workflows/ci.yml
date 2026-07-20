@@ -60,6 +60,28 @@ jobs:
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
 
+  # Production-subpath proof: build with the GitHub Pages project-site base
+  # path, serve ONLY under /<repo>/, and run the full e2e suite plus
+  # base-path asset checks (manifest, sw.js, ONNX model, wasm, labels).
+  e2e-subpath:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Regenerate deterministic seed
+        run: python3 data/demo/generate_seed.py
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Playwright e2e under GitHub Pages base path
+        run: npm run e2e:subpath
+        env:
+          PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
+
   # Advisory dependency/secret scanning. Report-first (continue-on-error)
   # until the next planned dependency-bump cycle; results are visible in the
   # job log on every push. This is labelled deliberately — we do not claim a

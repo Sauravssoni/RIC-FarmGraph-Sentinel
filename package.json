@@ -16,6 +16,9 @@
     "test": "npm run test --workspace apps/web",
     "test:api": "python3 -m pytest apps/api/tests -q",
     "e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "build:subpath": "NEXT_PUBLIC_BASE_PATH=/RIC-FarmGraph-Sentinel npm run build --workspace apps/web",
+    "prepare:subpath": "node tests/e2e/prepare-subpath.mjs",
+    "e2e:subpath": "npm run build:subpath && npm run prepare:subpath && E2E_SUBPATH=/RIC-FarmGraph-Sentinel playwright test --config tests/e2e/playwright.config.ts",
     "api": "cd apps/api && uvicorn app.main:app --reload --port 8000"
   },
   "devDependencies": {

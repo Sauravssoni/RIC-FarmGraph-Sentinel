@@ -16,6 +16,7 @@
  */
 import pixfeat from "@data/models/pixfeat-v0.json";
 import type { PixelFeatures } from "./pixelQuality";
+import { withBase } from "./basePath";
 
 export type ProviderKind = "EDGE_MODEL" | "EDGE_HEURISTIC" | "DETERMINISTIC_FALLBACK" | "EXPERT_ONLY";
 
@@ -165,14 +166,14 @@ let labelsPromise: Promise<string[]> | null = null;
 
 async function loadLabels(): Promise<string[]> {
   if (!labelsPromise) {
-    labelsPromise = fetch("/models/imagenet_classes.txt").then((r) => r.text()).then((t) => t.split("\n").map((s) => s.trim()).filter(Boolean));
+    labelsPromise = fetch(withBase("/models/imagenet_classes.txt")).then((r) => r.text()).then((t) => t.split("\n").map((s) => s.trim()).filter(Boolean));
   }
   return labelsPromise;
 }
 
 export async function onnxScreeningAvailable(): Promise<boolean> {
   try {
-    const res = await fetch("/models/mobilenetv2-7.onnx", { method: "HEAD" });
+    const res = await fetch(withBase("/models/mobilenetv2-7.onnx"), { method: "HEAD" });
     return res.ok;
   } catch {
     return false;
@@ -186,13 +187,13 @@ export async function onnxScreeningAvailable(): Promise<boolean> {
 export async function runOnnxScreening(img: ImageData): Promise<ScreeningResult | null> {
   try {
     const ort = await import("onnxruntime-web");
-    ort.env.wasm.wasmPaths = "/ort/"; // bundled runtime — works fully offline after first cache
+    ort.env.wasm.wasmPaths = withBase("/ort/"); // bundled runtime — works fully offline after first cache
     // Force the NON-threaded wasm binary: static hosts (GitHub Pages) cannot
     // send the COOP/COEP headers SharedArrayBuffer needs, so the threaded
     // build is unusable there. Single-thread SIMD is fast enough for 224×224.
     ort.env.wasm.numThreads = 1;
     if (!sessionPromise) {
-      sessionPromise = ort.InferenceSession.create("/models/mobilenetv2-7.onnx", { executionProviders: ["wasm"] });
+      sessionPromise = ort.InferenceSession.create(withBase("/models/mobilenetv2-7.onnx"), { executionProviders: ["wasm"] });
     }
     const session = (await sessionPromise) as import("onnxruntime-web").InferenceSession;
 

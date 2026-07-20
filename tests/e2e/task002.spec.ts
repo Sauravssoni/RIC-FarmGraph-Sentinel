@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  */
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/demo/");
+  await page.goto("demo/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 });
@@ -58,10 +58,10 @@ test("digital twins index + golden twin with scenario simulator", async ({ page 
   await runAction(5);
   await expect(page.locator("section", { hasText: "Golden case live state" })).toContainText("AWAITING_EXPERT");
 
-  await page.goto("/digital-twins/");
+  await page.goto("digital-twins/");
   await expect(page.locator("main, body").getByText(/RJ-DEMO-PLOT-118/).first()).toBeVisible();
 
-  await page.goto("/digital-twins/RJ-DEMO-PLOT-118/");
+  await page.goto("digital-twins/RJ-DEMO-PLOT-118/");
   await expect(page.getByText(/Suspected issue/).first()).toBeVisible();
   // scenario simulator: expert confirmation raises the cluster score 65.5 → 71.5
   await expect(page.getByRole("button", { name: /Expert confirms/i }).first()).toBeVisible();
@@ -71,14 +71,14 @@ test("digital twins index + golden twin with scenario simulator", async ({ page 
 });
 
 test("support page lists sourced KVK directory", async ({ page }) => {
-  await page.goto("/support/");
+  await page.goto("support/");
   await expect(page.getByText(/KVK Jodhpur-I/).first()).toBeVisible();
   await expect(page.getByText(/ICAR-CAZRI/).first()).toBeVisible();
   await expect(page.getByText(/source/i).first()).toBeVisible();
 });
 
 test("learning flywheel page shows lifecycle and honesty note", async ({ page }) => {
-  await page.goto("/learning/");
+  await page.goto("learning/");
   await expect(page.getByText(/CHAMPION/).first()).toBeVisible();
   await expect(page.getByText(/CANDIDATE/).first()).toBeVisible();
   await expect(page.getByText(/auto-trained/).first()).toBeVisible();
@@ -86,7 +86,7 @@ test("learning flywheel page shows lifecycle and honesty note", async ({ page })
 
 test("field scan runs REAL in-browser ONNX screening (MobileNetV2, bundled)", async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto("/field/scan/");
+  await page.goto("field/scan/");
   // consent → details
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: /Next/ }).click();
@@ -114,7 +114,7 @@ test("field scan runs REAL in-browser ONNX screening (MobileNetV2, bundled)", as
 });
 
 test("integrations page shows cached public-data snapshot", async ({ page }) => {
-  await page.goto("/integrations/");
+  await page.goto("integrations/");
   await expect(page.getByText("Public-data connector — cached snapshot")).toBeVisible();
   await expect(page.getByText(/CACHED · fetched/).first()).toBeVisible();
   await expect(page.getByText("LIVE_FETCHED").first()).toBeVisible();

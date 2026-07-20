@@ -40,6 +40,11 @@ jobs:
         run: npm run build --workspace apps/web
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
+          # Deployed API URL for "connected" mode. Set the repo variable
+          # NEXT_PUBLIC_API_URL (Settings → Secrets and variables → Actions →
+          # Variables) once the Render service from render.yaml exists.
+          # Empty → frontend honestly shows STANDALONE DETERMINISTIC DEMO.
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out

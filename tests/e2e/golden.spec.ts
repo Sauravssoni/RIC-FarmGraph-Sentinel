@@ -19,7 +19,7 @@ async function liveState(page: Page): Promise<string> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/demo/");
+  await page.goto("demo/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 });
@@ -65,7 +65,7 @@ test("golden loop via guided demo controller (deterministic)", async ({ page }) 
 });
 
 test("command centre renders KPIs, map and provenance", async ({ page }) => {
-  await page.goto("/command-centre/");
+  await page.goto("command-centre/");
   await expect(page.getByText(/Simulated prototype dataset/).first()).toBeVisible();
   await expect(page.getByText("Pilot geospatial view").first()).toBeVisible();
   await expect(page.locator("svg").first()).toBeVisible(); // pilot geospatial view
@@ -73,13 +73,13 @@ test("command centre renders KPIs, map and provenance", async ({ page }) => {
 });
 
 test("case detail shows timeline and advisory lock", async ({ page }) => {
-  await page.goto("/cases/C-2609/");
+  await page.goto("cases/C-2609/");
   await expect(page.getByText("C-2609").first()).toBeVisible();
   await expect(page.getByText(/LOCKED/).first()).toBeVisible();
 });
 
 test("integrations page tells the truth", async ({ page }) => {
-  await page.goto("/integrations/");
+  await page.goto("integrations/");
   await expect(page.getByText(/No adapter on this page is live/).first()).toBeVisible();
   await expect(page.getByText(/RajSSO/).first()).toBeVisible();
   await expect(page.getByText(/AGMARKNET/).first()).toBeVisible();
@@ -89,7 +89,7 @@ test.describe("responsive smoke", () => {
   for (const width of [1440, 1024, 768, 390]) {
     test(`no horizontal overflow at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      for (const route of ["/command-centre/", "/field/scan/", "/cases/", "/outbreaks/"]) {
+      for (const route of ["command-centre/", "field/scan/", "cases/", "outbreaks/"]) {
         await page.goto(route);
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
