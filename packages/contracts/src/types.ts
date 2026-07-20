@@ -164,12 +164,49 @@ export interface KvkRecord {
   lat: number; lon: number; coordsApproximate: boolean;
   specialities: string[]; source: string;
 }
-export type ReferralStatus = "DRAFT" | "SHARED" | "ACKNOWLEDGED" | "RESPONDED" | "CLOSED";
+export type ReferralStatus = "DRAFT" | "READY_TO_SHARE" | "SHARED" | "ACKNOWLEDGED" | "RESPONDED" | "ESCALATED" | "CLOSED";
+export type ReferralUrgency = "ROUTINE" | "PRIORITY" | "URGENT";
+export type SlaStatus = "WITHIN_SLA" | "DUE_SOON" | "OVERDUE" | "COMPLETED";
 export interface Referral {
   id: string; caseId: string; kvkId: string; reason: string; note: string;
+  urgency: ReferralUrgency;
   createdBy: string; createdAt: string; status: ReferralStatus;
   statusHistory: { status: ReferralStatus; at: string; actor: string; note?: string }[];
   channel: "in_app_pack" | "printable_card";
+  slaTargetHours: number; dueAt: string;
+}
+
+/**
+ * Referral evidence pack — the downloadable handoff artefact for a KVK.
+ * Privacy rule: coordinates are rounded (~1 km) and the farmer reference is
+ * the pseudonymous FarmGraph ID only — never a name, phone, Aadhaar or
+ * Jan Aadhaar number. Mirrored field-for-field by the API pack endpoint.
+ */
+export interface ReferralPack {
+  packVersion: "kvk-referral-pack/v1";
+  generatedAt: string;
+  referralId: string; referralStatus: ReferralStatus; caseId: string;
+  farmerRef: string; plotRef: string;
+  district: string; block: string;
+  coordinates: { lat: number; lon: number; precisionNote: string };
+  crop: string; cropStage: string;
+  symptomSummary: string;
+  imageHashes: string[];
+  imageQuality: string;
+  inference: { provider: string; version: string; topLabel: string | null; topScore: number | null };
+  verificationStatement: string;
+  expertReviewState: string;
+  urgency: ReferralUrgency;
+  outbreakRelationship: string;
+  requestedAction: string;
+  originatingRole: string;
+  consentStatus: string;
+  createdAt: string;
+  sla: { targetHours: number; dueAt: string; status: SlaStatus };
+  auditReference: string;
+  farmgraphContact: string;
+  kvk: { id: string; name: string; district: string; phone: string | null; email: string | null; address: string };
+  provenance: string;
 }
 
 export interface LearningRecord {

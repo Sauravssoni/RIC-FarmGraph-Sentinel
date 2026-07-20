@@ -120,13 +120,18 @@ def test_referral_lifecycle(client):
                     json={"kvkId": kvk["id"], "reason": "expert consult", "note": "please advise"})
     assert r.status_code == 201
     ref = r.json()
-    assert ref["status"] == "SHARED"
-    assert ref["statusHistory"][0]["status"] == "SHARED"
+    # Creation lands at READY_TO_SHARE — never SHARED (delivery not automated)
+    assert ref["status"] == "READY_TO_SHARE"
+    assert ref["statusHistory"][0]["status"] == "READY_TO_SHARE"
+    assert ref["slaTargetHours"] == 48 and ref["dueAt"] > ref["createdAt"]
     # unknown KVK rejected
     bad = client.post(f"/api/v1/cases/{cid}/referrals", json={"kvkId": "KVK-FAKE", "reason": "x"})
     assert bad.status_code == 422
-    # forward transitions
-    for nxt in ("ACKNOWLEDGED", "RESPONDED", "CLOSED"):
+    # skipping READY_TO_SHARE → ACKNOWLEDGED is an invalid transition
+    skip = client.post(f"/api/v1/referrals/{ref['id']}/status", json={"status": "ACKNOWLEDGED"})
+    assert skip.status_code == 409
+    # forward transitions along the full lifecycle
+    for nxt in ("SHARED", "ACKNOWLEDGED", "RESPONDED", "CLOSED"):
         rr = client.post(f"/api/v1/referrals/{ref['id']}/status", json={"status": nxt})
         assert rr.status_code == 200
         assert rr.json()["status"] == nxt
@@ -307,6 +312,19 @@ def test_sqlite_persistence_across_restart(tmp_path, monkeypatch):
     r2.reset()
     assert r2.get_case("C-2614")["state"] == "DRAFT"
     assert len(r2.learning_records) == 0
+
+    # Restore module identity for later tests: the reload above created a new
+    # AdvisoryRejected class, which would break `except AdvisoryRejected` in
+    # the already-registered route functions (their __globals__ share the
+    # module dict, which reload mutates in place). Re-linking all modules
+    # gives one consistent set of classes again.
+    import app.persistence as persistence_mod
+    import app.routers.api as api_mod
+    import app.main as main_mod
+    importlib.reload(persistence_mod)
+    importlib.reload(repo_mod)
+    importlib.reload(api_mod)
+    importlib.reload(main_mod)
 
 
 # ---------------- public-data connector (Phase J) ----------------

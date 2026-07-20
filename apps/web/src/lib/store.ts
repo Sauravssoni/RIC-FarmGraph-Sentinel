@@ -13,6 +13,7 @@ import type {
 } from "@contracts";
 import { freshSeed } from "./seed";
 import { captureQuality, diagnose, expertPriority, outbreakScore, representativeOrder } from "./engine";
+import { canTransitionReferral, DEFAULT_SLA_HOURS } from "./kvk";
 
 const STORAGE_KEY = "fgr-demo-state-v1";
 const CLOSED = new Set(["RESOLVED", "CLOSED_UNKNOWN", "CLOSED_DUPLICATE"]);
@@ -298,20 +299,31 @@ export class DemoStore {
     return fu;
   }
 
-  createReferral(caseId: string, input: { kvkId: string; reason: string; note: string; channel?: "in_app_pack" | "printable_card" }) {
+  createReferral(caseId: string, input: {
+    kvkId: string; reason: string; note: string;
+    channel?: "in_app_pack" | "printable_card";
+    urgency?: import("@contracts").ReferralUrgency;
+    slaTargetHours?: number;
+  }) {
     const c = this.getCase(caseId);
     if (!c) return undefined;
     const at = nowIso();
+    const slaHours = input.slaTargetHours ?? DEFAULT_SLA_HOURS;
+    const dueAt = new Date(new Date(at).getTime() + slaHours * 3600_000).toISOString();
     const n = this.state.referrals.length + 1;
+    // Creation lands at READY_TO_SHARE (never SHARED): external KVK delivery
+    // is not automated in this demo, so a new referral must not imply receipt.
     const ref: import("@contracts").Referral = {
       id: `REF-${2600 + n}`, caseId, kvkId: input.kvkId, reason: input.reason, note: input.note,
-      createdBy: "expert.demo", createdAt: at, status: "SHARED",
-      statusHistory: [{ status: "SHARED", at, actor: "expert.demo", note: "Evidence bundle shared with KVK (simulated delivery)" }],
+      urgency: input.urgency ?? "PRIORITY",
+      createdBy: "expert.demo", createdAt: at, status: "READY_TO_SHARE",
+      statusHistory: [{ status: "READY_TO_SHARE", at, actor: "expert.demo", note: "Evidence pack prepared — external KVK delivery not automated (demo)" }],
       channel: input.channel ?? "in_app_pack",
+      slaTargetHours: slaHours, dueAt,
     };
     this.state.referrals.push(ref);
     this.append(c, at, "kvk_referral", "expert (KVK persona, demo)",
-      `Referred to ${input.kvkId} — ${input.reason}`);
+      `Referred to ${input.kvkId} — ${input.reason} [${ref.urgency}]`);
     this.emit();
     return ref;
   }
@@ -319,6 +331,9 @@ export class DemoStore {
   updateReferralStatus(refId: string, status: import("@contracts").ReferralStatus, note?: string) {
     const ref = this.state.referrals.find((r) => r.id === refId);
     if (!ref) return undefined;
+    // Same transition guard as the API (REFERRAL_FLOW mirror).
+    if (!canTransitionReferral(ref.status, status)) return undefined;
+    if (status === "ESCALATED" && !note?.trim()) return undefined; // escalation note required
     const at = nowIso();
     ref.status = status;
     ref.statusHistory.push({ status, at, actor: "expert.demo", ...(note ? { note } : {}) });

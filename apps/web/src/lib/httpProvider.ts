@@ -73,8 +73,25 @@ export function postSyncBatch(idempotencyKey: string, cases: SyncCasePayload[]):
   return postJson<SyncBatchResult>("/api/v1/sync/batch", { idempotencyKey, cases }, "field_worker");
 }
 
-export function createReferral(caseId: string, body: { kvkId: string; reason: string; note?: string }): Promise<Referral> {
+export function createReferral(caseId: string, body: {
+  kvkId: string; reason: string; note?: string;
+  urgency?: Referral["urgency"]; slaTargetHours?: number;
+}): Promise<Referral> {
   return postJson<Referral>(`/api/v1/cases/${caseId}/referrals`, body, "expert");
+}
+
+export function updateReferralStatus(refId: string, status: Referral["status"], note?: string): Promise<Referral> {
+  return postJson<Referral>(`/api/v1/referrals/${refId}/status`, { status, note: note ?? "" }, "expert");
+}
+
+/** All referrals (with server-computed slaStatus) — filter client-side by case. */
+export function getReferrals(): Promise<{ referrals: Referral[]; provenance: string }> {
+  return getJson("/api/v1/referrals");
+}
+
+/** Authoritative referral evidence pack from the connected backend. */
+export function getReferralPack(refId: string): Promise<import("@contracts").ReferralPack> {
+  return getJson(`/api/v1/referrals/${refId}/pack`);
 }
 
 export function issueAdvisory(caseId: string, advisoryId: string): Promise<Case> {

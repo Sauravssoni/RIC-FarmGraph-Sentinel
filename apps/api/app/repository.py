@@ -13,7 +13,7 @@ import copy
 import json
 import os
 import threading
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
 
@@ -383,39 +383,80 @@ class DemoRepository:
             out.append({**cl, "score": breakdown})
         return out
 
-    # ---------------- referrals (Phase D server side) ----------------
+    # ---------------- referrals (Phase D + Task 003 Phase 2A) ----------------
+    # Lifecycle: DRAFT → READY_TO_SHARE → SHARED → ACKNOWLEDGED → RESPONDED →
+    # CLOSED, with ESCALATED as an overdue/escalation branch. Creation lands at
+    # READY_TO_SHARE (never SHARED): in this demo no external KVK delivery is
+    # automated, so a fresh referral must not imply the KVK received anything.
+    REFERRAL_FLOW: dict[str, tuple[str, ...]] = {
+        "DRAFT": ("READY_TO_SHARE",),
+        "READY_TO_SHARE": ("SHARED",),
+        "SHARED": ("ACKNOWLEDGED", "ESCALATED"),
+        "ACKNOWLEDGED": ("RESPONDED", "ESCALATED"),
+        "ESCALATED": ("RESPONDED", "CLOSED"),
+        "RESPONDED": ("CLOSED",),
+        "CLOSED": (),
+    }
+    REFERRAL_URGENCY = ("ROUTINE", "PRIORITY", "URGENT")
+    DEFAULT_SLA_HOURS = 48
+
+    @staticmethod
+    def sla_status(ref: dict[str, Any], now: datetime | None = None) -> str:
+        if ref["status"] in ("RESPONDED", "CLOSED"):
+            return "COMPLETED"
+        now = now or datetime.now().astimezone()
+        due = datetime.fromisoformat(ref["dueAt"])
+        if now > due:
+            return "OVERDUE"
+        if now > due - timedelta(hours=12):
+            return "DUE_SOON"
+        return "WITHIN_SLA"
+
+    def referrals_view(self) -> list[dict[str, Any]]:
+        return [{**ref, "slaStatus": self.sla_status(ref)} for ref in self.referrals.values()]
+
     def create_referral(self, case: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             kvk = next((k for k in self.kvks if k["id"] == body["kvkId"]), None)
             if kvk is None:
                 raise AdvisoryRejected("KVK_NOT_FOUND", f"KVK {body['kvkId']} is not in the sourced demo directory")
+            urgency = body.get("urgency", "PRIORITY")
+            if urgency not in self.REFERRAL_URGENCY:
+                raise AdvisoryRejected("BAD_URGENCY", f"urgency must be one of {self.REFERRAL_URGENCY}")
+            sla_hours = int(body.get("slaTargetHours") or self.DEFAULT_SLA_HOURS)
             self._ref_counter += 1
             at = self._now()
+            due = (datetime.fromisoformat(at) + timedelta(hours=sla_hours)).isoformat(timespec="seconds")
             actor = body.get("createdBy") or "expert — KVK persona (demo)"
             ref = {
                 "id": f"REF-{self._ref_counter}", "caseId": case["id"], "kvkId": kvk["id"],
-                "reason": body["reason"], "note": body.get("note", ""),
-                "createdBy": actor, "createdAt": at, "status": "SHARED",
-                "statusHistory": [{"status": "SHARED", "at": at, "actor": actor, "note": body.get("note", "")}],
+                "reason": body["reason"], "note": body.get("note", ""), "urgency": urgency,
+                "createdBy": actor, "createdAt": at, "status": "READY_TO_SHARE",
+                "statusHistory": [{"status": "READY_TO_SHARE", "at": at, "actor": actor,
+                                   "note": "Evidence pack prepared — external KVK delivery not automated (demo)"}],
                 "channel": body.get("channel", "in_app_pack"),
+                "slaTargetHours": sla_hours, "dueAt": due,
             }
             self.referrals[ref["id"]] = ref
             if self.store is not None:
                 self.store.put("referrals", ref["id"], ref)
             self._append(case, at, "kvk_referral", actor,
-                         f"Case referred to {kvk['name']} ({kvk['district']}) — {body['reason']}")
-            return ref
+                         f"Case referred to {kvk['name']} ({kvk['district']}) — {body['reason']} [{urgency}]")
+            return {**ref, "slaStatus": self.sla_status(ref)}
 
     def update_referral(self, ref_id: str, status: str, note: str = "", actor: str = "system (demo)") -> dict[str, Any]:
         with self._lock:
             ref = self.referrals.get(ref_id)
             if ref is None:
                 raise AdvisoryRejected("REFERRAL_NOT_FOUND", f"Referral {ref_id} not found")
-            order = ["DRAFT", "SHARED", "ACKNOWLEDGED", "RESPONDED", "CLOSED"]
-            if status not in order:
+            if status not in self.REFERRAL_FLOW:
                 raise AdvisoryRejected("BAD_STATUS", f"Unknown referral status '{status}'")
-            if order.index(status) < order.index(ref["status"]):
-                raise AdvisoryRejected("BAD_TRANSITION", f"Referral cannot move {ref['status']} → {status}")
+            allowed = self.REFERRAL_FLOW[ref["status"]]
+            if status not in allowed:
+                raise AdvisoryRejected("BAD_TRANSITION",
+                                       f"Referral cannot move {ref['status']} → {status} (allowed: {', '.join(allowed) or 'none'})")
+            if status == "ESCALATED" and not note.strip():
+                raise AdvisoryRejected("ESCALATION_NOTE_REQUIRED", "Escalating a referral requires an escalation note")
             at = self._now()
             ref["status"] = status
             ref["statusHistory"].append({"status": status, "at": at, "actor": actor, "note": note})
@@ -424,7 +465,68 @@ class DemoRepository:
             case = self.cases.get(ref["caseId"])
             if case is not None:
                 self._append(case, at, "kvk_referral_status", actor, f"Referral {ref_id} → {status}. {note}".strip())
-            return ref
+            return {**ref, "slaStatus": self.sla_status(ref)}
+
+    def build_referral_pack(self, ref_id: str) -> dict[str, Any]:
+        """Downloadable KVK referral evidence pack (kvk-referral-pack/v1).
+
+        Privacy: coordinates rounded to 2 dp (~1 km); farmer reference is the
+        pseudonymous FarmGraph ID only — no name, phone, Aadhaar/Jan Aadhaar.
+        """
+        ref = self.referrals.get(ref_id)
+        if ref is None:
+            raise AdvisoryRejected("REFERRAL_NOT_FOUND", f"Referral {ref_id} not found")
+        case = self.cases.get(ref["caseId"])
+        if case is None:
+            raise AdvisoryRejected("CASE_NOT_FOUND", f"Case {ref['caseId']} not found")
+        kvk = next((k for k in self.kvks if k["id"] == ref["kvkId"]), None)
+        obs = case.get("observations", [])
+        latest = obs[-1] if obs else {}
+        diag = case.get("diagnosis") or {}
+        top = (diag.get("candidates") or [{}])[0]
+        quality = latest.get("quality") or {}
+        verified = bool(case.get("expertConfirmedCondition")) or case.get("state") == "EXPERT_CONFIRMED"
+        cluster = next((c for c in self.clusters.values() if case["id"] in c.get("memberCaseIds", [])), None)
+        referral_events = [e for e in case.get("timeline", []) if str(e.get("type", "")).startswith("kvk_referral")]
+        consent = case.get("consent") or {}
+        return {
+            "packVersion": "kvk-referral-pack/v1",
+            "generatedAt": self._now(),
+            "referralId": ref["id"], "referralStatus": ref["status"], "caseId": case["id"],
+            "farmerRef": case.get("farmerId"), "plotRef": case.get("plotId"),
+            "district": case.get("district"), "block": case.get("block"),
+            "coordinates": {"lat": round(case.get("lat", 0), 2), "lon": round(case.get("lon", 0), 2),
+                            "precisionNote": "Rounded to ~1 km for farmer privacy (demo policy)"},
+            "crop": case.get("crop"), "cropStage": case.get("cropStage"),
+            "symptomSummary": latest.get("symptomNote") or top.get("label") or "See case evidence",
+            "imageHashes": [o["imageRef"] for o in obs if o.get("imageRef")],
+            "imageQuality": (f"passed={quality.get('passed')}, coverageScore={quality.get('coverageScore')}"
+                             if quality else "no quality record"),
+            "inference": {"provider": diag.get("provider", "none"), "version": diag.get("modelVersion", "n/a"),
+                          "topLabel": top.get("conditionId"), "topScore": top.get("simConfidence")},
+            "verificationStatement": ("Expert-reviewed in demo workflow — see review history"
+                                      if verified else
+                                      "UNVERIFIED — screening result only; not confirmed by an agronomist"),
+            "expertReviewState": case.get("state"),
+            "urgency": ref.get("urgency", "PRIORITY"),
+            "outbreakRelationship": (f"Member of cluster {cluster['id']} ({cluster['name']}, status {cluster['status']})"
+                                     if cluster else "Not part of any outbreak cluster"),
+            "requestedAction": f"{ref['reason']}. {ref.get('note', '')}".strip(),
+            "originatingRole": ref.get("createdBy", "expert (demo)"),
+            "consentStatus": (f"CONSENT RECORDED (demo) — {consent.get('purposeNote', 'crop-health purpose')}"
+                              if consent.get("given") else "NO CONSENT RECORDED"),
+            "createdAt": ref["createdAt"],
+            "sla": {"targetHours": ref.get("slaTargetHours", self.DEFAULT_SLA_HOURS),
+                    "dueAt": ref["dueAt"], "status": self.sla_status(ref)},
+            "auditReference": referral_events[-1]["id"] if referral_events else "no audit event",
+            "farmgraphContact": "FarmGraph Rakshak demo helpdesk — callback placeholder (no live helpdesk in prototype)",
+            "kvk": {"id": kvk["id"], "name": kvk["name"], "district": kvk["district"],
+                    "phone": kvk.get("phone") or None, "email": kvk.get("email") or None,
+                    "address": kvk.get("address", "")} if kvk else
+                   {"id": ref["kvkId"], "name": "unknown", "district": "", "phone": None, "email": None, "address": ""},
+            "provenance": ("SIMULATED DEMO PACK — case data synthetic; KVK contact from sourced official directory "
+                           "(see data/reference/kvk-directory.json); delivery to KVK not automated"),
+        }
 
     # ---------------- learning flywheel (Phase F server side) ----------------
     def learning_summary(self) -> dict[str, Any]:

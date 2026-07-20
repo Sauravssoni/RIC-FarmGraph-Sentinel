@@ -215,6 +215,8 @@ class ReferralCreate(BaseModel):
     note: str = ""
     channel: str = "in_app_pack"
     createdBy: Optional[str] = None
+    urgency: str = "PRIORITY"  # ROUTINE | PRIORITY | URGENT (validated in repo)
+    slaTargetHours: Optional[int] = None  # default 48
 
 
 class ReferralStatusUpdate(BaseModel):
@@ -285,7 +287,17 @@ def create_referral(request: Request, case_id: str, body: ReferralCreate, _role:
 @router.get("/referrals")
 def list_referrals(request: Request) -> dict[str, Any]:
     r = repo(request)
-    return {"referrals": list(r.referrals.values()), "provenance": "SIMULATED"}
+    return {"referrals": r.referrals_view(), "provenance": "SIMULATED"}
+
+
+@router.get("/referrals/{ref_id}/pack")
+def referral_pack(request: Request, ref_id: str) -> dict[str, Any]:
+    """Downloadable KVK referral evidence pack (kvk-referral-pack/v1)."""
+    try:
+        return repo(request).build_referral_pack(ref_id)
+    except AdvisoryRejected as exc:
+        status = 404 if exc.code == "REFERRAL_NOT_FOUND" else 409
+        raise HTTPException(status_code=status, detail={"code": exc.code, "detail": exc.detail}) from exc
 
 
 @router.post("/referrals/{ref_id}/status", dependencies=[Depends(rate_limit)])
