@@ -211,6 +211,28 @@ export class DemoStore {
     };
     c.reviews.push(r);
     const label = (id: string | null) => (id ? id : "?");
+    // Learning flywheel: every expert decision on evidence becomes a labelled
+    // learning record with provenance — the raw material of future training.
+    if (input.decision === "confirm" || input.decision === "correct" || input.decision === "unknown") {
+      const expertLabel = input.decision === "unknown" ? "unknown" : (input.conditionId ?? lead ?? "unknown");
+      const lastObs = c.observations.at(-1);
+      const n = this.state.learningRecords.length + 1;
+      this.state.learningRecords.push({
+        id: `LR-${2600 + n}`, caseId: c.id, observationId: lastObs?.id ?? null,
+        crop: c.crop, cropStage: c.cropStage, district: c.district, block: c.block,
+        aiLabel: lead, aiTopScore: c.diagnosis?.candidates[0]?.simConfidence ?? null,
+        providerId: lastObs?.edgeInference?.providerId ?? c.diagnosis?.modelVersion ?? null,
+        expertLabel, reviewAction: input.decision,
+        imageIds: c.observations.flatMap((o) => o.imageIds ?? []),
+        voiceNoteId: c.observations.map((o) => o.voiceNoteId).find(Boolean) ?? null,
+        consentForTraining: c.consent.given,
+        usedInModelVersion: null,
+        provenance: "EXPERT_VERIFIED_REVIEW",
+        createdAt: at,
+      });
+      this.append(c, at, "learning_recorded", "system (demo)",
+        `Learning record created (ai=${label(lead)} → expert=${expertLabel}) — queued for future evaluated training, not auto-training`);
+    }
     switch (input.decision) {
       case "confirm":
         c.expertConfirmedCondition = input.conditionId ?? lead;

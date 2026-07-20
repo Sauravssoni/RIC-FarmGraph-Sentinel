@@ -172,12 +172,25 @@ export interface Referral {
   channel: "in_app_pack" | "printable_card";
 }
 
+export interface LearningRecord {
+  id: string; caseId: string; observationId: string | null;
+  crop: string; cropStage: string; district: string; block: string;
+  aiLabel: string | null; aiTopScore: number | null; providerId: string | null;
+  expertLabel: string; reviewAction: "confirm" | "correct" | "unknown";
+  imageIds: string[]; voiceNoteId: string | null;
+  consentForTraining: boolean;
+  usedInModelVersion: string | null; // null until a reviewed training run consumes it
+  provenance: "EXPERT_VERIFIED_REVIEW";
+  createdAt: string;
+}
+export type ModelLifecycleState = "REGISTERED" | "CANDIDATE" | "EVALUATING" | "CHALLENGER" | "CHAMPION" | "RETIRED";
+
 export interface DemoSeed {
   meta: { scenario: string; demoNow: string; generatedBy: string; provenance: string; pilotRegions: string[] };
   personas: Persona[]; farmers: FarmerReference[]; plots: PlotReference[]; cropSeasons: CropSeason[];
   cases: Case[]; clusters: OutbreakCluster[]; missions: FieldMission[];
   advisories: Advisory[]; modelVersions: ModelVersion[]; auditEvents: AuditEvent[];
-  referrals: Referral[];
+  referrals: Referral[]; learningRecords: LearningRecord[];
 }
 
 export interface OverviewKpis {
