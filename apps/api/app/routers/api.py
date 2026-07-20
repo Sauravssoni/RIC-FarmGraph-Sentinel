@@ -393,3 +393,84 @@ def public_data(request: Request) -> dict[str, Any]:
     """Cached public-data snapshot (scripts/fetch_public_data.py). Served with
     its fetchedAt timestamp and a CACHED label — never claimed as a live feed."""
     return repo(request).public_data_snapshot
+
+
+# ---------------------------------------------------------------------------
+# Bhashini Hindi PoC (Task 003 Phase 2B) — backend-only adapter; no
+# credentials in the frontend. States are exact; failures never fake success.
+# ---------------------------------------------------------------------------
+
+class BhashiniAsrRequest(BaseModel):
+    audioBase64: str
+    mimeType: str
+    consentRef: str
+    caseRef: str
+
+
+class BhashiniTtsRequest(BaseModel):
+    kind: str
+    params: Optional[dict[str, str]] = None
+
+
+class VoiceTranscriptConfirm(BaseModel):
+    transcript: str
+    confirmationStatus: str  # CONFIRMED_AS_RETURNED | CONFIRMED_AFTER_EDIT
+    consentRef: str
+    voiceNoteHash: str = ""
+    regional: bool = False
+    actor: Optional[str] = None
+
+
+@router.get("/bhashini/status")
+def bhashini_status() -> dict[str, Any]:
+    """Adapter state + setup guidance. Never echoes secret values."""
+    from ..bhashini import adapter_from_env
+    return adapter_from_env().status()
+
+
+@router.post("/bhashini/asr", dependencies=[Depends(rate_limit)])
+def bhashini_asr(body: BhashiniAsrRequest, _role: str = Depends(require_write)) -> dict[str, Any]:
+    """Hindi ASR via the official ULCA pipeline sequence. Transcript is
+    ALWAYS returned UNREVIEWED — confirmation is a separate audited step."""
+    from ..bhashini import BhashiniError, adapter_from_env
+    if not body.audioBase64 or len(body.audioBase64) > 14_000_000:
+        raise HTTPException(status_code=413, detail="audio missing or too large (max ~10 MB base64)")
+    try:
+        return adapter_from_env().asr(body.audioBase64, body.mimeType,
+                                      consent_ref=body.consentRef, case_ref=body.caseRef)
+    except BhashiniError as exc:
+        status = 422 if exc.state.startswith("BAD_") else 409
+        raise HTTPException(status_code=status, detail={"code": exc.state, "detail": exc.detail}) from exc
+
+
+@router.post("/bhashini/tts", dependencies=[Depends(rate_limit)])
+def bhashini_tts(body: BhashiniTtsRequest, _role: str = Depends(require_write)) -> dict[str, Any]:
+    """Hindi TTS — allowlisted non-chemical message kinds ONLY. There is no
+    free-text TTS endpoint, so unlocked chemical advisories cannot reach TTS."""
+    from ..bhashini import BhashiniError, adapter_from_env
+    try:
+        return adapter_from_env().tts(body.kind, body.params)
+    except BhashiniError as exc:
+        status = 422 if exc.state.startswith("BAD_") else 409
+        raise HTTPException(status_code=status, detail={"code": exc.state, "detail": exc.detail}) from exc
+
+
+@router.post("/cases/{case_id}/voice-transcript", dependencies=[Depends(rate_limit)])
+def confirm_voice_transcript(request: Request, case_id: str, body: VoiceTranscriptConfirm,
+                             _role: str = Depends(require_write)) -> dict[str, Any]:
+    """Attach a user-confirmed voice transcript to a case (audited).
+
+    The transcript only enters the case AFTER the field worker confirms or
+    edits it — ASR output alone is never treated as verified. Regional
+    (Marwari/Mewari) notes route the case to human expert review."""
+    if body.confirmationStatus not in ("CONFIRMED_AS_RETURNED", "CONFIRMED_AFTER_EDIT"):
+        raise HTTPException(status_code=422, detail={
+            "code": "BAD_CONFIRMATION",
+            "detail": "confirmationStatus must be CONFIRMED_AS_RETURNED or CONFIRMED_AFTER_EDIT"})
+    if not body.transcript.strip():
+        raise HTTPException(status_code=422, detail={"code": "EMPTY_TRANSCRIPT", "detail": "transcript is empty"})
+    r = repo(request)
+    case = r.get_case(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail=f"Case {case_id} not found")
+    return r.attach_voice_transcript(case, body.model_dump())

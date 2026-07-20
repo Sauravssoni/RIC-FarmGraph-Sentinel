@@ -21,13 +21,13 @@ export interface ReadProvider {
   integrations(): Promise<IntegrationAdapterStatus[]>;
 }
 
-async function getJson<T>(path: string, role: DemoRole = "officer"): Promise<T> {
+export async function getJson<T>(path: string, role: DemoRole = "officer"): Promise<T> {
   const r = await fetch(`${API_URL}${path}`, { headers: { "X-Demo-Role": role }, signal: AbortSignal.timeout(4000) });
   if (!r.ok) throw new Error(`API ${path} -> ${r.status}`);
   return (await r.json()) as T;
 }
 
-async function postJson<T>(path: string, body: unknown, role: DemoRole = "officer"): Promise<T> {
+export async function postJson<T>(path: string, body: unknown, role: DemoRole = "officer"): Promise<T> {
   const r = await fetch(`${API_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Demo-Role": role },

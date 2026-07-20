@@ -93,6 +93,11 @@ export async function getVoiceNoteURL(id: string): Promise<string | undefined> {
   const row = await voiceDB().voiceNotes.get(id);
   return row ? URL.createObjectURL(row.blob) : undefined;
 }
+/** Raw blob for the Bhashini ASR upload path (recording never leaves the device otherwise). */
+export async function getVoiceNoteBlob(id: string): Promise<Blob | undefined> {
+  const row = await voiceDB().voiceNotes.get(id);
+  return row?.blob;
+}
 export async function deleteVoiceNote(id: string): Promise<void> {
   await voiceDB().voiceNotes.delete(id);
 }

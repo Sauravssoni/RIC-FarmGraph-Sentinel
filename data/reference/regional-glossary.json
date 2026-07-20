@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "purpose": "Guided-recording phrase glossary for Hindi and regional (Marwari/Mewari) field voice notes. STANDARD HINDI phrases only — regional variants are explicitly marked as requiring KVK expert validation. This glossary supports phrase-guided recording; it is NOT an ASR capability claim.",
+    "status": "DRAFT GLOSSARY — regional variants pending KVK validation",
+    "dialectAsrClaim": "NONE — no Marwari/Mewari ASR is claimed anywhere in this prototype",
+    "compiledOn": "2026-07-21"
+  },
+  "crops": [
+    {"en": "bajra (pearl millet)", "hi": "बाजरा", "regionalNote": "बाजरो — common Marwari variant (pending KVK validation)"},
+    {"en": "mustard", "hi": "सरसों", "regionalNote": "standard term used across Rajasthan"},
+    {"en": "guar (cluster bean)", "hi": "ग्वार", "regionalNote": "standard term"},
+    {"en": "cumin", "hi": "जीरा", "regionalNote": "जीरो — common Marwari variant (pending KVK validation)"},
+    {"en": "wheat", "hi": "गेहूं", "regionalNote": "standard term"}
+  ],
+  "symptoms": [
+    {"en": "yellow leaves", "hi": "पत्ते पीले हो रहे हैं", "regionalNote": "pending KVK validation"},
+    {"en": "white spots / white powder on leaves", "hi": "पत्तियों पर सफ़ेद धब्बे / सफ़ेद पाउडर", "regionalNote": "pending KVK validation"},
+    {"en": "downy growth under the leaf", "hi": "पत्ती के नीचे सफ़ेद रोंदुर परत", "regionalNote": "pending KVK validation"},
+    {"en": "wilting plant", "hi": "पौधा मुरझा रहा है", "regionalNote": "pending KVK validation"},
+    {"en": "drying leaf edges", "hi": "पत्तियों के किनारे सूख रहे हैं", "regionalNote": "pending KVK validation"},
+    {"en": "insects on the crop", "hi": "फ़सल पर कीड़े लगे हैं", "regionalNote": "pending KVK validation"},
+    {"en": "stunted growth", "hi": "पौधे की बढ़वार रुक गई है", "regionalNote": "pending KVK validation"}
+  ],
+  "guidedPrompts": [
+    {"en": "Say the crop name and village/block", "hi": "फ़सल का नाम और गाँव/ब्लॉक बोलें"},
+    {"en": "Describe what you see on the leaves", "hi": "पत्तों पर जो दिख रहा है वह बताएं"},
+    {"en": "Since how many days?", "hi": "कितने दिनों से है?"},
+    {"en": "How much of the field is affected?", "hi": "खेत का कितना हिस्सा प्रभावित है?"}
+  ]
+}

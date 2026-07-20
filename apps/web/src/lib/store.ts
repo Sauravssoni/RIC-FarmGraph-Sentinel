@@ -328,6 +328,26 @@ export class DemoStore {
     return ref;
   }
 
+  /** Standalone mirror of the API voice-transcript confirmation (audited). */
+  confirmVoiceTranscript(caseId: string, input: {
+    transcript: string;
+    confirmationStatus: "CONFIRMED_AS_RETURNED" | "CONFIRMED_AFTER_EDIT";
+    regional?: boolean;
+  }) {
+    const c = this.getCase(caseId);
+    if (!c) return undefined;
+    const at = nowIso();
+    if (input.regional) {
+      c.state = "AWAITING_EXPERT";
+      this.append(c, at, "regional_speech_review", "field worker (demo)",
+        "REGIONAL SPEECH — HUMAN REVIEW REQUIRED (Marwari/Mewari voice note; no ASR claimed)");
+    }
+    this.append(c, at, "voice_transcript_confirmed", "field worker (demo)",
+      `Voice transcript confirmed (${input.confirmationStatus === "CONFIRMED_AFTER_EDIT" ? "after edit" : "as returned"})`);
+    this.emit();
+    return c;
+  }
+
   updateReferralStatus(refId: string, status: import("@contracts").ReferralStatus, note?: string) {
     const ref = this.state.referrals.find((r) => r.id === refId);
     if (!ref) return undefined;

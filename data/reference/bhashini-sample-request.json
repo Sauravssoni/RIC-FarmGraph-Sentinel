@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "purpose": "Official-shape SAMPLE of the ULCA/Bhashini pipeline request/response sequence, from the documented public API contract (MeitY ULCA / Bhashini). This is a documentation fixture for contract tests and evaluator reference — NOT a live response and NOT recorded from a real call.",
+    "documentation": "https://bhashini.gov.in / ULCA API documentation (getModelsPipeline + pipeline inference)",
+    "accessedOn": "2026-07-21",
+    "containsCredentials": false
+  },
+  "step1_pipelineConfigRequest": {
+    "url": "https://meity-auth.ulcacontrib.org/ulca/apis/v0/model/getModelsPipeline",
+    "method": "POST",
+    "headers": {"userID": "<BHASHINI_USER_ID>", "ulcaApiKey": "<BHASHINI_API_KEY>", "Content-Type": "application/json"},
+    "body": {
+      "pipelineTasks": [
+        {"taskType": "asr", "config": {"language": {"sourceLanguage": "hi"}}}
+      ],
+      "pipelineRequestConfig": {"pipelineId": "<BHASHINI_PIPELINE_ID>"}
+    }
+  },
+  "step2_pipelineConfigResponse_shape": {
+    "pipelineInferenceAPIEndPoint": {
+      "callbackUrl": "https://dhruva-api.bhashini.gov.in/services/inference/pipeline",
+      "inferenceApiKey": {"name": "Authorization", "value": "<issued-at-runtime>"}
+    },
+    "pipelineResponseConfig": [
+      {"taskType": "asr", "config": [{"serviceId": "<asr-service-id-hi>", "language": {"sourceLanguage": "hi"}}]},
+      {"taskType": "tts", "config": [{"serviceId": "<tts-service-id-hi>", "language": {"sourceLanguage": "hi"}}]}
+    ]
+  },
+  "step3_asrComputeRequest": {
+    "url": "<callbackUrl from step 2>",
+    "method": "POST",
+    "headers": {"Authorization": "<inferenceApiKey.value from step 2>", "Content-Type": "application/json"},
+    "body": {
+      "pipelineTasks": [
+        {"taskType": "asr", "config": {"language": {"sourceLanguage": "hi"}, "serviceId": "<asr-service-id-hi>", "audioFormat": "wav"}}
+      ],
+      "inputData": {"audio": [{"audioContent": "<base64-audio>"}]}
+    }
+  },
+  "step4_asrComputeResponse_shape": {
+    "pipelineResponse": [
+      {"taskType": "asr", "output": [{"source": "<hindi transcript>"}]}
+    ]
+  },
+  "step5_ttsComputeRequest_body": {
+    "pipelineTasks": [
+      {"taskType": "tts", "config": {"language": {"sourceLanguage": "hi"}, "serviceId": "<tts-service-id-hi>"}}
+    ],
+    "inputData": {"input": [{"source": "<hindi text from allowlisted FarmGraph template>"}]}
+  },
+  "step6_ttsComputeResponse_shape": {
+    "pipelineResponse": [
+      {"taskType": "tts", "audio": [{"audioContent": "<base64-wav>"}]}
+    ]
+  }
+}

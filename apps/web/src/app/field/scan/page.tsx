@@ -15,7 +15,7 @@ import { apiHealthy, postSyncBatch } from "@/lib/httpProvider";
 import { DiagnosisPanel } from "@/components/DiagnosisPanel";
 import { StatusChip } from "@/components/bits";
 import CaptureStudio, { type CaptureBundle } from "@/components/CaptureStudio";
-import { VoiceNoteRecorder, HindiDictation } from "@/components/VoiceTools";
+import { VoiceNoteRecorder, HindiDictation, VoiceLanguageSelector, BhashiniPanel, type VoiceLanguage } from "@/components/VoiceTools";
 import type { VoiceNoteMeta } from "@/lib/voice";
 import type { CaptureChecklist, Case, DiagnosisResult } from "@contracts";
 
@@ -46,6 +46,7 @@ export default function FieldScan() {
   const [checklist, setChecklist] = useState<CaptureChecklist>({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false });
   const [bundle, setBundle] = useState<CaptureBundle | null>(null);
   const [voiceNote, setVoiceNote] = useState<VoiceNoteMeta | null>(null);
+  const [voiceLang, setVoiceLang] = useState<VoiceLanguage>("hi");
   const [done, setDone] = useState<{ c: Case; d: DiagnosisResult | null } | null>(null);
   const [resume, setResume] = useState(false);
   const [outboxN, setOutboxN] = useState(0);
@@ -264,8 +265,16 @@ export default function FieldScan() {
             </div>
             <div className="rounded-lg border border-sand-300 p-3">
               <p className="text-sm font-bold text-ink-800">🎙 Voice note (optional)</p>
+              <VoiceLanguageSelector value={voiceLang} onChange={setVoiceLang} />
               <VoiceNoteRecorder consentGiven={consent} existing={voiceNote}
                 onSaved={(m) => setVoiceNote(m)} onDeleted={() => setVoiceNote(null)} />
+              <BhashiniPanel
+                voiceNote={voiceNote}
+                caseRef={activeCaseId ?? "DRAFT-FIELD-CASE"}
+                consentRef={consent ? "scan-consent-ack" : "no-consent"}
+                regional={voiceLang !== "hi"}
+                onConfirmed={(text) => form.setValue("symptomNote", text, { shouldDirty: true })}
+              />
             </div>
           </div>
           <div className="mt-4 flex gap-2">

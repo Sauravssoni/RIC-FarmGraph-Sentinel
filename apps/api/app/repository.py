@@ -528,6 +528,35 @@ class DemoRepository:
                            "(see data/reference/kvk-directory.json); delivery to KVK not automated"),
         }
 
+    # ---------------- voice transcript confirmation (Task 003 Phase 2B) ----------------
+    def attach_voice_transcript(self, case: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+        """Attach a user-confirmed voice transcript (audited). ASR output only
+        enters the case after explicit confirmation/edit; regional speech
+        routes the case to human expert review — no dialect ASR is claimed."""
+        with self._lock:
+            at = self._now()
+            actor = body.get("actor") or "field_worker (demo)"
+            conf = body["confirmationStatus"]
+            regional = bool(body.get("regional"))
+            if regional:
+                case["state"] = "AWAITING_EXPERT"
+                self._append(case, at, "regional_speech_review", actor,
+                             "REGIONAL SPEECH — HUMAN REVIEW REQUIRED (Marwari/Mewari voice note; no ASR claimed)")
+            edited = "after edit" if conf == "CONFIRMED_AFTER_EDIT" else "as returned"
+            note_hash = (body.get("voiceNoteHash") or "")[:10]
+            self._append(case, at, "voice_transcript_confirmed", actor,
+                         f"Voice transcript confirmed ({edited})"
+                         + (f" — voice note sha256 {note_hash}…" if note_hash else ""))
+            case["updatedAt"] = at
+            if self.store is not None:
+                self.store.put("cases", case["id"], case)
+            return {
+                "caseId": case["id"], "state": case["state"],
+                "transcript": body["transcript"], "confirmationStatus": conf,
+                "regional": regional, "regionalReviewRequired": regional,
+                "at": at, "provenance": "SIMULATED",
+            }
+
     # ---------------- learning flywheel (Phase F server side) ----------------
     def learning_summary(self) -> dict[str, Any]:
         records = list(self.learning_records.values())
