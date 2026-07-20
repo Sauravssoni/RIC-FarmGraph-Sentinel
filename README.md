@@ -25,13 +25,16 @@ FarmGraph Rakshak is a **government-credible prototype** of an offline-first cro
 
 **Proves**
 - The full operational loop works end-to-end and offline-first: capture → quality gate → recapture → triage → expert review → outbreak scoring → mission → advisory → follow-up → outcome → audit.
-- A non-ML, deterministic inference layer can run the entire workflow honestly while a real model is being licensed and evaluated.
+- **Real pixel processing**: every photo passes a genuine pixel-quality engine (blur/brightness/contrast/exposure/green-coverage) and an interpretable pixel-feature scorer with published weights, uncertainty and abstention — provider-labelled `EDGE_HEURISTIC`, with `DETERMINISTIC_FALLBACK` as the safety net and an optional `EDGE_MODEL` (MobileNetV2 ONNX) drop-in for OOD screening.
+- **Real image pipeline**: type/size validation, downscale, EXIF strip by re-encoding, SHA-256 content hashing, duplicate detection, IndexedDB evidence store with deletion.
+- **Authoritative demo backend**: SQLite persistence that survives restarts, idempotent sync, referrals, learning records, advisory safety invariants (7 rejection codes), demo RBAC + security headers + rate limiting.
+- Farm Digital Twins with a transparent, compute-only scenario simulator; sourced KVK directory with referral routing; voice notes/dictation/TTS; a learning flywheel with no auto-training; live-fetched public data served CACHED.
 - Every screen carries provenance; no number on any screen claims measured model accuracy.
 - Government integration reality is represented truthfully: 17 adapters, **none live**, each with status, contract shape, consent basis and fallback.
 
 **Does not**
-- No trained ML model ships in Task 001. All confidence scores are **simulated by deterministic rules** (`data/demo/policy.json` + `taxonomy.json`) and labelled `SIMULATED`.
-- No adapter is connected to any government system. Statuses are only `SIMULATED / CONTRACT_DEFINED / PUBLIC_DATA_ONLY / AWAITING_AUTHORITY / NOT_STARTED`.
+- No trained crop-disease model ships. The pixel scorer is an interpretable heuristic (`pixfeat-v0`, weights published); its note states *"no accuracy has been measured"*. Triage-of-record scores remain **simulated by deterministic rules** and labelled `SIMULATED`.
+- No adapter is connected to any government system. Statuses are only `SIMULATED / CONTRACT_DEFINED / PUBLIC_DATA_ONLY / AWAITING_AUTHORITY / NOT_STARTED`; the public-data snapshot is served **CACHED** with its fetch timestamp.
 - No real farmer data exists anywhere in the repo. All farmers are pseudonymous demo records.
 
 ## Quick start
@@ -51,8 +54,11 @@ npm run dev --workspace apps/web          # http://localhost:3000 → redirects 
 uvicorn app.main:app --app-dir apps/api --port 8000
 NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev --workspace apps/web
 
-# 4) guided demonstration (12 presenter steps, deterministic reset)
+# 4) Judge Mode — golden path (12 steps) + adversarial negative path (9 live checks)
 open http://localhost:3000/demo/
+
+# 5) one-command full stack (optional)
+docker compose up --build                 # web :3000 · api :8000 (SQLite demo persistence)
 ```
 
 ## Quality gates (exact commands)
@@ -60,10 +66,10 @@ open http://localhost:3000/demo/
 ```bash
 npm run typecheck --workspace apps/web     # tsc --noEmit — strict
 npm run lint --workspace apps/web          # eslint --max-warnings 0
-npm run test --workspace apps/web          # vitest run — 26 tests
-cd apps/api && python3 -m pytest tests/ -q # 18 tests
+npm run test --workspace apps/web          # vitest run — 52 tests
+cd apps/api && python3 -m pytest tests/ -q # 33 tests (invariants, RBAC, sync, persistence)
 npm run build --workspace apps/web         # next build — static export to apps/web/out
-npx playwright test -c tests/e2e           # golden-path e2e (system Chromium)
+npm run e2e                                # Playwright — 13 tests (golden + negative path + responsive)
 ```
 
 ## Repository layout
@@ -109,6 +115,11 @@ No secrets are required anywhere in Task 001.
 | [docs/advisory-safety.md](docs/advisory-safety.md) | Advisory lifecycle and the chemical lock |
 | [docs/data-provenance.md](docs/data-provenance.md) | Provenance labels, geo licensing, farmer privacy |
 | [docs/research-evidence.md](docs/research-evidence.md) | Public government research/data register with citations |
+| [docs/MODEL_CARD.md](docs/MODEL_CARD.md) | Inference stack card — pixfeat heuristic, ONNX screening, lifecycle |
+| [docs/DATA_CARD.md](docs/DATA_CARD.md) | Datasets, consent, privacy, retention, persistence |
+| [docs/EVALUATOR_GUIDE.md](docs/EVALUATOR_GUIDE.md) | 20-minute judge walkthrough + rubric map |
+| [docs/LIVE_DEMO.md](docs/LIVE_DEMO.md) | Runbook: static, docker, hosted, presenter script |
+| [docs/RESPONSIBLE_AI.md](docs/RESPONSIBLE_AI.md) | Truth rules, human-in-the-loop, safety, privacy |
 | [docs/threat-model.md](docs/threat-model.md) | Security & misuse threat model |
 | [docs/90-day-pilot.md](docs/90-day-pilot.md) | Phased 90-day pilot plan |
 | [docs/pilot-measurement-plan.md](docs/pilot-measurement-plan.md) | Metrics, baselines, instrumentation |
