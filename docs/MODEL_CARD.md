@@ -35,10 +35,10 @@ e2e-tested via the Judge Mode negative path.
 | Role | Screens whether a frame looks plant-like at all (ImageNet plant subset) |
 | Hard rule | Its ImageNet labels are **never shown as crop-disease output**; it only informs the OOD note |
 
-The model file is **not bundled** (the sandbox mirror truncated the download);
-the app HEAD-checks `/models/mobilenetv2-7.onnx` and degrades gracefully —
-dropping the file into `apps/web/public/models/` enables the screening path
-with zero code change. `onnxruntime-web` and its WASM runtime ship with the app.
+The model file (14,246,826 bytes, verified by loading + inference) is bundled
+at `apps/web/public/models/mobilenetv2-7.onnx`; the app still HEAD-checks the
+path and degrades gracefully if it is absent. `onnxruntime-web` and its WASM
+runtime ship with the app.
 
 ## 3. Deterministic rules engine (`DETERMINISTIC_FALLBACK`)
 

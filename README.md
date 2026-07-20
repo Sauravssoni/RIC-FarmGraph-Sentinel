@@ -69,7 +69,7 @@ npm run lint --workspace apps/web          # eslint --max-warnings 0
 npm run test --workspace apps/web          # vitest run — 52 tests
 cd apps/api && python3 -m pytest tests/ -q # 33 tests (invariants, RBAC, sync, persistence)
 npm run build --workspace apps/web         # next build — static export to apps/web/out
-npm run e2e                                # Playwright — 13 tests (golden + negative path + responsive)
+npm run e2e                                # Playwright — 14 tests (golden + negative path + responsive)
 ```
 
 ## Repository layout

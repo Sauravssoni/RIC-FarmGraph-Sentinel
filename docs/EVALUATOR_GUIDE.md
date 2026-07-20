@@ -62,6 +62,6 @@ the live API: 409 SUPERSEDED, 403 RBAC, idempotent `already_applied`.
 ## 4. Known limitations (stated, not hidden)
 
 `docs/known-limitations.md` — the demo engine is not a trained model; SQLite
-is demo-grade; the MobileNetV2 screening file is a drop-in (not bundled);
+is demo-grade; the MobileNetV2 file is used for OOD screening only (never as a disease label);
 Marwari/Mewari dialect ASR is not claimed; chemical advisory content stays
 locked behind approved expert content.

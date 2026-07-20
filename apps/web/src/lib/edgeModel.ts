@@ -187,6 +187,10 @@ export async function runOnnxScreening(img: ImageData): Promise<ScreeningResult 
   try {
     const ort = await import("onnxruntime-web");
     ort.env.wasm.wasmPaths = "/ort/"; // bundled runtime — works fully offline after first cache
+    // Force the NON-threaded wasm binary: static hosts (GitHub Pages) cannot
+    // send the COOP/COEP headers SharedArrayBuffer needs, so the threaded
+    // build is unusable there. Single-thread SIMD is fast enough for 224×224.
+    ort.env.wasm.numThreads = 1;
     if (!sessionPromise) {
       sessionPromise = ort.InferenceSession.create("/models/mobilenetv2-7.onnx", { executionProviders: ["wasm"] });
     }

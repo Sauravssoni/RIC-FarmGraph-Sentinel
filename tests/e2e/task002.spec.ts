@@ -84,6 +84,35 @@ test("learning flywheel page shows lifecycle and honesty note", async ({ page })
   await expect(page.getByText(/auto-trained/).first()).toBeVisible();
 });
 
+test("field scan runs REAL in-browser ONNX screening (MobileNetV2, bundled)", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/field/scan/");
+  // consent → details
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: /Next/ }).click();
+  // details: pick a symptom, continue
+  await page.locator('[role="radiogroup"] label').first().click();
+  await page.getByRole("button", { name: /Next/ }).click();
+  // capture: synthesise a downy-like leaf image in-page and upload it
+  const dataUrl = await page.evaluate(() => {
+    const c = document.createElement("canvas");
+    c.width = 512; c.height = 384;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#3e6b2f";
+    ctx.fillRect(0, 0, 512, 384);
+    ctx.fillStyle = "#d8dcc8";
+    for (let y = 0; y < 384; y++) for (let x = 0; x < 512; x++) if ((x + y) % 5 === 0) ctx.fillRect(x, y, 1, 1);
+    return c.toDataURL("image/png");
+  });
+  const buffer = Buffer.from(dataUrl.split(",")[1], "base64");
+  await page.locator('input[type="file"]').first().setInputFiles({ name: "leaf.png", mimeType: "image/png", buffer });
+  // pixel-quality stage must pass, then inference runs (pixfeat + ONNX screening)
+  await expect(page.getByRole("button", { name: "▶ Analyse pixels" })).toBeEnabled({ timeout: 30_000 });
+  await page.getByRole("button", { name: "▶ Analyse pixels" }).click();
+  await expect(page.getByText(/EDGE_MODEL screening ran in-browser/).first()).toBeVisible({ timeout: 90_000 });
+  await expect(page.getByText(/Top label:/).first()).toBeVisible();
+});
+
 test("integrations page shows cached public-data snapshot", async ({ page }) => {
   await page.goto("/integrations/");
   await expect(page.getByText("Public-data connector — cached snapshot")).toBeVisible();
