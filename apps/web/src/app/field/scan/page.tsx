@@ -14,6 +14,8 @@ import { clearDraft, enqueue, loadDraft, markAttempt, outboxItems, removeOutbox,
 import { DiagnosisPanel } from "@/components/DiagnosisPanel";
 import { StatusChip } from "@/components/bits";
 import CaptureStudio, { type CaptureBundle } from "@/components/CaptureStudio";
+import { VoiceNoteRecorder, HindiDictation } from "@/components/VoiceTools";
+import type { VoiceNoteMeta } from "@/lib/voice";
 import type { CaptureChecklist, Case, DiagnosisResult } from "@contracts";
 
 const formSchema = z.object({
@@ -42,7 +44,7 @@ export default function FieldScan() {
   const [consent, setConsent] = useState(false);
   const [checklist, setChecklist] = useState<CaptureChecklist>({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false });
   const [bundle, setBundle] = useState<CaptureBundle | null>(null);
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<VoiceNoteMeta | null>(null);
   const [done, setDone] = useState<{ c: Case; d: DiagnosisResult | null } | null>(null);
   const [resume, setResume] = useState(false);
   const [outboxN, setOutboxN] = useState(0);
@@ -115,6 +117,7 @@ export default function FieldScan() {
             ...(bundle.inference ? { edgeInference: bundle.inference as unknown as import("@contracts").EdgeInferenceRecord } : {}),
           }
         : {}),
+      ...(voiceNote ? { voiceNoteId: voiceNote.id } : {}),
     });
     let d: DiagnosisResult | null = null;
     const pixelGateOk = !bundle || bundle.imageIds.length === 0 || bundle.pixelQuality.pass;
@@ -227,10 +230,12 @@ export default function FieldScan() {
             <div>
               <label className="label" htmlFor="note">{t("scan.note")}</label>
               <textarea id="note" className="input min-h-[64px]" {...form.register("symptomNote")} />
+              <HindiDictation onTranscript={(text) => form.setValue("symptomNote", text, { shouldDirty: true })} />
             </div>
             <div className="rounded-lg border border-sand-300 p-3">
-              <button type="button" className="btn-secondary w-full text-sm" onClick={() => setVoiceOpen((v) => !v)}>🎙 {t("scan.voice")}</button>
-              {voiceOpen && <p className="mt-2 text-xs text-ink-600">{t("scan.voice.note")}</p>}
+              <p className="text-sm font-bold text-ink-800">🎙 Voice note (optional)</p>
+              <VoiceNoteRecorder consentGiven={consent} existing={voiceNote}
+                onSaved={(m) => setVoiceNote(m)} onDeleted={() => setVoiceNote(null)} />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
@@ -314,7 +319,7 @@ export default function FieldScan() {
           {done.d && <DiagnosisPanel d={done.d} compact />}
           <div className="flex gap-2">
             <Link href="/cases" className="btn-secondary flex-1 text-center">{t("nav.cases")} →</Link>
-            <button type="button" className="btn-primary flex-1" onClick={() => { setDone(null); setPhase("consent"); setConsent(false); setChecklist({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false }); setBundle(null); form.reset({ crop: "bajra", cropStage: "vegetative", symptomCategory: "", symptomNote: "" }); }}>
+            <button type="button" className="btn-primary flex-1" onClick={() => { setDone(null); setPhase("consent"); setConsent(false); setChecklist({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false }); setBundle(null); setVoiceNote(null); form.reset({ crop: "bajra", cropStage: "vegetative", symptomCategory: "", symptomNote: "" }); }}>
               + New report
             </button>
           </div>

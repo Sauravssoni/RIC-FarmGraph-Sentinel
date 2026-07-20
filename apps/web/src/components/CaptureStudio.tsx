@@ -14,6 +14,7 @@ import { analyzePixels, type PixelQualityResult } from "@/lib/pixelQuality";
 import {
   scoreWithPixfeat, runOnnxScreening, onnxScreeningAvailable, type InferenceOutput,
 } from "@/lib/edgeModel";
+import { speak } from "@/lib/voice";
 
 export interface CaptureBundle {
   imageIds: string[];
@@ -161,9 +162,18 @@ export default function CaptureStudio({ crop, onChange }: { crop: string; onChan
             </div>
           </div>
           {!item.quality.pass && (
-            <ul className="mt-2 list-disc space-y-0.5 rounded-md bg-saffron-50 px-4 py-2 text-xs font-semibold text-saffron-800">
-              {item.quality.recaptureInstructions.map((r) => <li key={r}>{r}</li>)}
-            </ul>
+            <div className="mt-2 rounded-md bg-saffron-50 px-4 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-extrabold text-saffron-800">Recapture instructions</span>
+                <button type="button" className="text-xs font-bold text-ink-700 underline"
+                  onClick={() => speak(item.quality.recaptureInstructions.join(". "), "en-IN")}>
+                  🔊 read aloud
+                </button>
+              </div>
+              <ul className="list-disc space-y-0.5 text-xs font-semibold text-saffron-800">
+                {item.quality.recaptureInstructions.map((r) => <li key={r}>{r}</li>)}
+              </ul>
+            </div>
           )}
         </article>
       ))}
