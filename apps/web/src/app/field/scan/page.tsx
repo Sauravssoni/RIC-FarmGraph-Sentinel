@@ -11,6 +11,7 @@ import { useI18n } from "@/lib/i18n";
 import { captureQuality } from "@/lib/engine";
 import { CROPS, SYMPTOMS, SEED } from "@/lib/seed";
 import { clearDraft, enqueue, loadDraft, markAttempt, outboxItems, removeOutbox, saveDraft } from "@/lib/offline";
+import { apiHealthy, postSyncBatch } from "@/lib/httpProvider";
 import { DiagnosisPanel } from "@/components/DiagnosisPanel";
 import { StatusChip } from "@/components/bits";
 import CaptureStudio, { type CaptureBundle } from "@/components/CaptureStudio";
@@ -137,15 +138,44 @@ export default function FieldScan() {
     const items = await outboxItems();
     if (items.length === 0) { setSyncMsg("Outbox empty — nothing to sync."); return; }
     if (!app.effectiveOnline) { setSyncMsg("Still offline — reports stay safely on this device."); return; }
+    const apiUp = await apiHealthy();
+    let apiApplied = 0, apiReplayed = 0;
     for (const item of items) {
       const cid = (item.payload as { caseId?: string }).caseId;
-      if (cid) store.markSynced(cid);
+      if (!cid) { await removeOutbox(item.id!); continue; }
+      if (apiUp) {
+        // Real write to the demo API: idempotent — the same key never applies twice.
+        const c = store.getCase(cid);
+        if (c) {
+          try {
+            const res = await postSyncBatch(`scan-${cid}`, [{
+              farmerId: c.farmerId, plotId: c.plotId, crop: c.crop, cropStage: c.cropStage,
+              season: c.season, district: c.district, block: c.block, lat: c.lat, lon: c.lon,
+              areaAcres: c.areaAcres, consent: { given: c.consent.given, channel: c.consent.channel },
+              createdOffline: true,
+              observations: c.observations.map((o) => ({
+                symptomCategory: o.symptomCategory, symptomNote: o.symptomNote, checklist: o.checklist, at: o.at,
+              })),
+            }]);
+            if (res.status === "applied") apiApplied += 1; else apiReplayed += 1;
+          } catch (err) {
+            await markAttempt(item.id!, String(err));
+            setSyncMsg(`API sync failed for ${cid} — kept safely in outbox. ${err instanceof Error ? err.message : ""}`);
+            return;
+          }
+        }
+      }
+      store.markSynced(cid);
       await markAttempt(item.id!, null);
       await removeOutbox(item.id!);
     }
     setOutboxN(0);
     app.refreshOutbox();
-    setSyncMsg(t("scan.synced") + ` — ${items.length} report(s)`);
+    setSyncMsg(
+      apiUp
+        ? `${t("scan.synced")} — ${items.length} report(s) written to the demo API (idempotent: ${apiApplied} applied, ${apiReplayed} already applied)`
+        : `${t("scan.synced")} — ${items.length} report(s) marked synced in the LOCAL demo store (API unreachable — no server write claimed)`
+    );
     setDone((prev) => (prev ? { ...prev, c: store.getCase(prev.c.id)! } : prev));
   }, [app, store, t]);
 

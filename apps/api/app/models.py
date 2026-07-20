@@ -325,3 +325,5 @@ class HealthResponse(BaseModel):
     provider: str
     persistence: str
     provenance: str = "SIMULATED"
+    persistedBoot: bool = False
+    security: str = ""

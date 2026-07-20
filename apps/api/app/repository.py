@@ -1,22 +1,28 @@
-"""In-memory deterministic demo repository.
+"""Deterministic demo repository with SQLite document persistence (Phase G).
 
-Task 001 limitation (documented): persistence is process memory only, seeded from
-data/demo/seed.json and restored by POST /api/v1/demo/reset. This is deliberate
-for the prototype and is stated openly in /health and the OpenAPI description.
+Seeded from data/demo/seed.json and restored by POST /api/v1/demo/reset.
+Persistence: a labelled single-node SQLite JSON-document store
+(app/persistence.py) — reviews, referrals, learning records, missions and
+audit events now survive a process restart. Set FGR_PERSIST=memory to fall
+back to pure in-memory behaviour (test-suite default). All data remains
+SIMULATED and is labelled as such; no government adapter is live.
 """
 from __future__ import annotations
 
 import copy
 import json
+import os
 import threading
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Optional
 
 from .engine import DeterministicEngine
+from .persistence import SQLStore, default_store
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = REPO_ROOT / "data" / "demo"
+REF_DIR = REPO_ROOT / "data" / "reference"
 
 CLOSED_STATES = {"RESOLVED", "CLOSED_UNKNOWN", "CLOSED_DUPLICATE"}
 VERIFIED_STATES = {"EXPERT_CONFIRMED", "EXPERT_CORRECTED", "FIELD_VISIT_REQUIRED", "ADVISORY_ISSUED", "FOLLOW_UP_DUE", "IMPROVING", "NOT_IMPROVING"}
@@ -24,6 +30,10 @@ VERIFIED_STATES = {"EXPERT_CONFIRMED", "EXPERT_CORRECTED", "FIELD_VISIT_REQUIRED
 
 def _load(name: str) -> Any:
     return json.loads((DATA_DIR / name).read_text(encoding="utf-8"))
+
+
+def _load_ref(name: str) -> Any:
+    return json.loads((REF_DIR / name).read_text(encoding="utf-8"))
 
 
 class DemoRepository:
@@ -34,11 +44,20 @@ class DemoRepository:
         self.integrations = _load("integrations.json")
         self.engine = DeterministicEngine(self.policy, self.taxonomy)
         self._seed = _load("seed.json")
-        self.reset()
+        self.kvks = _load_ref("kvk-directory.json")["kvks"]
+        self.store: Optional[SQLStore] = (
+            None if os.environ.get("FGR_PERSIST") == "memory" else default_store()
+        )
+        self._persisted_boot = False
+        self._idem_cache: dict[str, dict[str, Any]] = {}
+        self.reset(clear_store=False)
 
     # ---------------- lifecycle ----------------
-    def reset(self) -> None:
+    def reset(self, clear_store: bool = True) -> None:
         with self._lock:
+            if clear_store and self.store is not None:
+                self.store.clear_all()
+                self._idem_cache.clear()
             data = copy.deepcopy(self._seed)
             self.meta = data["meta"]
             self.personas = data["personas"]
@@ -51,10 +70,67 @@ class DemoRepository:
             self.advisories = data["advisories"]
             self.model_versions = data["modelVersions"]
             self.audit_events: list[dict[str, Any]] = data["auditEvents"]
+            self.referrals: dict[str, dict[str, Any]] = {r["id"]: r for r in data.get("referrals", [])}
+            self.learning_records: dict[str, dict[str, Any]] = {r["id"]: r for r in data.get("learningRecords", [])}
             self._ev_counter = max(
                 (int(e["id"].split("-")[1]) for e in self.audit_events if e["id"].startswith("EV-")),
                 default=0,
             )
+            self._ref_counter = max(
+                (int(rid.split("-")[1]) for rid in self.referrals if rid.startswith("REF-")),
+                default=2600,
+            )
+            self._lr_counter = max(
+                (int(rid.split("-")[1]) for rid in self.learning_records if rid.startswith("LR-")),
+                default=2600,
+            )
+            if clear_store:
+                self._persisted_boot = False
+                self._persist_all()
+            else:
+                self._load_persisted()
+
+    # ---------------- persistence ----------------
+    def _persist_all(self) -> None:
+        if self.store is None:
+            return
+        for c in self.cases.values():
+            self.store.put("cases", c["id"], c)
+        for m in self.missions.values():
+            self.store.put("missions", m["id"], m)
+        for r in self.referrals.values():
+            self.store.put("referrals", r["id"], r)
+        for lr in self.learning_records.values():
+            self.store.put("learning_records", lr["id"], lr)
+        for e in self.audit_events:
+            self.store.put("audit", e["id"], e)
+
+    def _load_persisted(self) -> None:
+        if self.store is None:
+            return
+        stored_cases = self.store.all("cases")
+        if not stored_cases:
+            self._persist_all()
+            return
+        self._persisted_boot = True
+        self.cases = {d["id"]: d for d in stored_cases}
+        missions = self.store.all("missions")
+        if missions:
+            self.missions = {d["id"]: d for d in missions}
+        self.referrals = {d["id"]: d for d in self.store.all("referrals")}
+        self.learning_records = {d["id"]: d for d in self.store.all("learning_records")}
+        audit = self.store.all("audit")
+        if audit:
+            self.audit_events = sorted(audit, key=lambda e: e["id"])
+            self._ev_counter = max(
+                (int(e["id"].split("-")[1]) for e in self.audit_events if e["id"].startswith("EV-")),
+                default=self._ev_counter,
+            )
+
+    def persistence_label(self) -> str:
+        if self.store is None:
+            return "in-memory (FGR_PERSIST=memory)"
+        return f"sqlite single-node demo store at {self.store.path} (labelled demo persistence — not production infrastructure)"
 
     # ---------------- helpers ----------------
     def _now(self) -> str:
@@ -69,7 +145,11 @@ class DemoRepository:
         e = self._event(at, type_, actor, summary)
         case["timeline"].append(e)
         case["updatedAt"] = at
-        self.audit_events.append({**e, "caseId": case["id"]})
+        audit = {**e, "caseId": case["id"]}
+        self.audit_events.append(audit)
+        if self.store is not None:
+            self.store.put("cases", case["id"], case)
+            self.store.put("audit", e["id"], audit)
 
     def get_case(self, case_id: str) -> Optional[dict[str, Any]]:
         return self.cases.get(case_id)
@@ -176,6 +256,32 @@ class DemoRepository:
             elif decision == "recapture":
                 case["state"] = "NEEDS_RECAPTURE"
                 self._append(case, at, "recapture_requested", reviewer, f"Expert requested recapture: {body['note']}")
+            if decision in ("confirm", "correct", "unknown"):
+                self._lr_counter += 1
+                diag = case.get("diagnosis") or {}
+                top = (diag.get("candidates") or [{}])[0]
+                lr = {
+                    "id": f"LR-{self._lr_counter}",
+                    "caseId": case["id"],
+                    "observationId": case["observations"][-1]["id"] if case["observations"] else None,
+                    "crop": case["crop"], "cropStage": case["cropStage"],
+                    "district": case["district"], "block": case["block"],
+                    "aiLabel": lead,
+                    "aiTopScore": top.get("simConfidence"),
+                    "providerId": diag.get("provider"),
+                    "expertLabel": case["expertConfirmedCondition"],
+                    "reviewAction": decision,
+                    "imageIds": [], "voiceNoteId": None,
+                    "consentForTraining": bool(case.get("consent", {}).get("given")),
+                    "usedInModelVersion": None,
+                    "provenance": "EXPERT_VERIFIED_REVIEW",
+                    "createdAt": at,
+                }
+                self.learning_records[lr["id"]] = lr
+                if self.store is not None:
+                    self.store.put("learning_records", lr["id"], lr)
+                self._append(case, at, "learning_recorded", "system (demo)",
+                             f"Learning record {lr['id']} captured from expert review ({decision}). No automatic training — record awaits a governed model-update cycle.")
             affected: list[dict[str, Any]] = []
             if decision in ("confirm", "correct"):
                 for cl in self.clusters.values():
@@ -224,6 +330,8 @@ class DemoRepository:
                 "visits": [], "syncStatus": "PENDING",
             }
             self.missions[mid] = mission
+            if self.store is not None:
+                self.store.put("missions", mid, mission)
             for cid in reps:
                 if cid in self.cases:
                     self._append(self.cases[cid], at, "mission_created", "system (demo)", f"Mission {mid} created covering this case (representative inspection)")
@@ -273,6 +381,161 @@ class DemoRepository:
             cl["status"] = breakdown["status"] if cl["status"] != "DISMISSED" else "DISMISSED"
             out.append({**cl, "score": breakdown})
         return out
+
+    # ---------------- referrals (Phase D server side) ----------------
+    def create_referral(self, case: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
+        with self._lock:
+            kvk = next((k for k in self.kvks if k["id"] == body["kvkId"]), None)
+            if kvk is None:
+                raise AdvisoryRejected("KVK_NOT_FOUND", f"KVK {body['kvkId']} is not in the sourced demo directory")
+            self._ref_counter += 1
+            at = self._now()
+            actor = body.get("createdBy") or "expert — KVK persona (demo)"
+            ref = {
+                "id": f"REF-{self._ref_counter}", "caseId": case["id"], "kvkId": kvk["id"],
+                "reason": body["reason"], "note": body.get("note", ""),
+                "createdBy": actor, "createdAt": at, "status": "SHARED",
+                "statusHistory": [{"status": "SHARED", "at": at, "actor": actor, "note": body.get("note", "")}],
+                "channel": body.get("channel", "in_app_pack"),
+            }
+            self.referrals[ref["id"]] = ref
+            if self.store is not None:
+                self.store.put("referrals", ref["id"], ref)
+            self._append(case, at, "kvk_referral", actor,
+                         f"Case referred to {kvk['name']} ({kvk['district']}) — {body['reason']}")
+            return ref
+
+    def update_referral(self, ref_id: str, status: str, note: str = "", actor: str = "system (demo)") -> dict[str, Any]:
+        with self._lock:
+            ref = self.referrals.get(ref_id)
+            if ref is None:
+                raise AdvisoryRejected("REFERRAL_NOT_FOUND", f"Referral {ref_id} not found")
+            order = ["DRAFT", "SHARED", "ACKNOWLEDGED", "RESPONDED", "CLOSED"]
+            if status not in order:
+                raise AdvisoryRejected("BAD_STATUS", f"Unknown referral status '{status}'")
+            if order.index(status) < order.index(ref["status"]):
+                raise AdvisoryRejected("BAD_TRANSITION", f"Referral cannot move {ref['status']} → {status}")
+            at = self._now()
+            ref["status"] = status
+            ref["statusHistory"].append({"status": status, "at": at, "actor": actor, "note": note})
+            if self.store is not None:
+                self.store.put("referrals", ref["id"], ref)
+            case = self.cases.get(ref["caseId"])
+            if case is not None:
+                self._append(case, at, "kvk_referral_status", actor, f"Referral {ref_id} → {status}. {note}".strip())
+            return ref
+
+    # ---------------- learning flywheel (Phase F server side) ----------------
+    def learning_summary(self) -> dict[str, Any]:
+        records = list(self.learning_records.values())
+        by_action: dict[str, int] = {}
+        by_crop: dict[str, int] = {}
+        by_district: dict[str, int] = {}
+        by_label: dict[str, int] = {}
+        for r in records:
+            by_action[r["reviewAction"]] = by_action.get(r["reviewAction"], 0) + 1
+            by_crop[r["crop"]] = by_crop.get(r["crop"], 0) + 1
+            by_district[r["district"]] = by_district.get(r["district"], 0) + 1
+            by_label[r["expertLabel"]] = by_label.get(r["expertLabel"], 0) + 1
+        return {
+            "total": len(records),
+            "corrections": by_action.get("correct", 0),
+            "unknowns": by_action.get("unknown", 0),
+            "byAction": by_action, "byCrop": by_crop, "byDistrict": by_district,
+            "byExpertLabel": by_label,
+            "usedInModelVersion": None,
+            "honestyNote": ("Expert review outcomes captured with provenance for a future, human-governed "
+                            "model-update cycle. No automatic training occurs; usedInModelVersion stays null "
+                            "until a reviewed training run consumes a record."),
+            "provenance": "SIMULATED",
+        }
+
+    # ---------------- advisory safety invariants (Phase H) ----------------
+    def issue_advisory(self, case: dict[str, Any], advisory_id: str) -> dict[str, Any]:
+        """Issue an advisory to a case ONLY when every safety invariant holds.
+        Raises AdvisoryRejected with a machine-readable code otherwise."""
+        with self._lock:
+            adv = next((a for a in self.advisories if a["id"] == advisory_id), None)
+            if adv is None:
+                raise AdvisoryRejected("ADVISORY_NOT_FOUND", f"Advisory {advisory_id} does not exist")
+            if adv.get("supersededBy"):
+                raise AdvisoryRejected("SUPERSEDED", f"{advisory_id} is superseded by {adv['supersededBy']}; issue the current version")
+            if adv["status"] != "APPROVED":
+                raise AdvisoryRejected("NOT_APPROVED", f"Advisory status is {adv['status']}; only APPROVED advisories may be issued")
+            valid_until = adv.get("validUntil")
+            if valid_until and date.today().isoformat() > valid_until:
+                raise AdvisoryRejected("EXPIRED", f"Advisory validity ended {valid_until}")
+            if adv["crop"] != case["crop"]:
+                raise AdvisoryRejected("CROP_MISMATCH", f"Advisory covers {adv['crop']}; case crop is {case['crop']}")
+            if not case.get("expertConfirmedCondition"):
+                raise AdvisoryRejected("EXPERT_REVIEW_REQUIRED", "An advisory may be issued only after expert confirmation/correction of the diagnosis")
+            if adv["conditionId"] != case["expertConfirmedCondition"]:
+                raise AdvisoryRejected(
+                    "CONDITION_MISMATCH",
+                    f"Advisory targets {adv['conditionId']}; expert-confirmed condition is {case['expertConfirmedCondition']}",
+                )
+            at = self._now()
+            case["advisoryRef"] = advisory_id
+            case["state"] = "ADVISORY_ISSUED"
+            self._append(case, at, "advisory_issued", "officer (demo)",
+                         f"Advisory {advisory_id} issued — all safety invariants passed (approved, current, crop- and condition-matched, expert-reviewed)")
+            return case
+
+    # ---------------- offline sync (Phase G) ----------------
+    def sync_batch(self, body: dict[str, Any]) -> dict[str, Any]:
+        """Idempotent offline-outbox sync. The same idempotencyKey never
+        applies twice; a replay returns the original result."""
+        with self._lock:
+            key = body.get("idempotencyKey")
+            if not key:
+                raise AdvisoryRejected("IDEMPOTENCY_KEY_REQUIRED", "sync_batch requires an idempotencyKey")
+            if self.store is not None:
+                stored = self.store.get("kv_meta", f"idem:{key}")
+                if stored is not None:
+                    return {**stored, "status": "already_applied"}
+            elif key in self._idem_cache:
+                return {**self._idem_cache[key], "status": "already_applied"}
+            case_ids: list[str] = []
+            for item in body.get("cases", []):
+                case = self.create_case(item)
+                case_ids.append(case["id"])
+                for obs in item.get("observations", []):
+                    self.add_observation(case, obs)
+            result = {"status": "applied", "idempotencyKey": key, "caseIds": case_ids, "provenance": "SIMULATED"}
+            if self.store is not None:
+                self.store.put("kv_meta", f"idem:{key}", result)
+            else:
+                self._idem_cache[key] = result
+            return result
+
+    # ---------------- digital twin bundle (Phase C server side) ----------------
+    def twin_bundle(self, plot_id: str) -> Optional[dict[str, Any]]:
+        plot = next((p for p in self.plots if p["id"] == plot_id), None)
+        if plot is None:
+            return None
+        cases = [c for c in self.cases_list() if c["plotId"] == plot_id]
+        season = next((cs for cs in self.crop_seasons if cs.get("plotId") == plot_id), None)
+        farmer = next((f for f in self.farmers if f.get("id") == plot.get("farmerId")), None)
+        clusters = [cl for cl in self.clusters.values() if any(c["id"] in cl["memberCaseIds"] for c in cases)]
+        scores = [self.engine.outbreak_score(cl, self.cases_list()) for cl in clusters]
+        conditions = {c.get("expertConfirmedCondition") for c in cases if c.get("expertConfirmedCondition")}
+        advisories = [a for a in self.advisories if a["crop"] == plot.get("crop") or a["conditionId"] in conditions]
+        return {
+            "plot": plot, "cropSeason": season, "farmer": farmer,
+            "cases": cases, "clusters": clusters, "clusterScores": scores,
+            "advisories": advisories,
+            "honestyNote": "Twin derived live from the demo case store — a transparent aggregate, not a predictive model.",
+            "provenance": "SIMULATED",
+        }
+
+
+class AdvisoryRejected(Exception):
+    """Domain-level rejection with a machine-readable safety code."""
+
+    def __init__(self, code: str, detail: str) -> None:
+        super().__init__(detail)
+        self.code = code
+        self.detail = detail
 
 
 class MissionConflict(Exception):

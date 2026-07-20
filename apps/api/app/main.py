@@ -1,19 +1,20 @@
-"""FarmGraph Rakshak Demo API (Task 001).
+"""FarmGraph Rakshak Demo API (Task 002).
 
-Deterministic demo backend. ALL data is SIMULATED. Persistence is in-memory
-only (documented Task 001 limitation) — restart or POST /api/v1/demo/reset
-restores the pristine seed. No government integration is live; no credentials
-exist in this service.
+Deterministic demo backend. ALL data is SIMULATED and labelled as such.
+Persistence is a labelled single-node SQLite document store (FGR_PERSIST=memory
+disables it); POST /api/v1/demo/reset restores the pristine seed. Demo role
+auth via the X-Demo-Role header demonstrates RBAC semantics — there are no
+real credentials, and no government integration is live.
 """
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, FastAPI
 
 from .repository import DemoRepository
 from .routers import api
+from .security import RateLimiter, demo_role, install_security
 
 
 @asynccontextmanager
@@ -24,23 +25,21 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="FarmGraph Rakshak Demo API",
-    version="0.1.0",
+    version="0.2.0",
     description=(
         "Deterministic demo API for the FarmGraph Rakshak prototype. "
-        "All data is SIMULATED and labelled as such. Persistence is in-memory only "
-        "(documented Task 001 limitation). The diagnosis provider is a rule-based demo "
-        "engine, NOT a trained model — no accuracy is claimed. No government adapter is live."
+        "All data is SIMULATED and labelled as such. Persistence is a labelled "
+        "single-node SQLite document store (demo-grade, not production). "
+        "The diagnosis provider is a rule-based demo engine, NOT a trained model — "
+        "no accuracy is claimed. No government adapter is live. "
+        "Security controls (X-Demo-Role RBAC, restricted CORS, security headers, "
+        "write rate limiting) are DEMO controls demonstrating the intended posture."
     ),
     lifespan=lifespan,
+    # Validate the X-Demo-Role header on EVERY route (unknown role → 400).
+    dependencies=[Depends(demo_role)],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+install_security(app, RateLimiter())
 
 app.include_router(api.router)
