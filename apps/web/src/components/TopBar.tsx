@@ -9,6 +9,7 @@ const NAV: { href: string; key: I18nKey }[] = [
   { href: "/command-centre", key: "nav.commandCentre" },
   { href: "/field/scan", key: "nav.scan" },
   { href: "/cases", key: "nav.cases" },
+  { href: "/digital-twins", key: "nav.twins" },
   { href: "/expert", key: "nav.expert" },
   { href: "/outbreaks", key: "nav.outbreaks" },
   { href: "/missions", key: "nav.missions" },
