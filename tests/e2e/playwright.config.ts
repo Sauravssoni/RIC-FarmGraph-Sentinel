@@ -14,7 +14,11 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4173",
     headless: true,
     launchOptions: {
-      executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium",
+      // Local sandboxes use system Chromium via CHROMIUM_PATH (or the common
+      // /usr/bin/chromium); CI uses the Playwright-downloaded browser.
+      ...(process.env.PLAYWRIGHT_NO_EXECUTABLE_PATH
+        ? {}
+        : { executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium" }),
       args: ["--no-sandbox", "--disable-dev-shm-usage"],
     },
   },
