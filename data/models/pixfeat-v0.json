@@ -1,0 +1,140 @@
+{
+  "id": "pixfeat-v0",
+  "version": "0.2.0",
+  "kind": "classical-cv-feature-scorer",
+  "licence": "Project-internal (Syntheon). Weights are hand-set, interpretable and published here.",
+  "honesty": "NOT a trained neural network. Linear scoring over interpretable pixel features with hand-set weights. No accuracy has been measured on real field imagery; treat all outputs as research-preview differentials requiring expert verification.",
+  "runtime": "typescript-canvas",
+  "features": [
+    {
+      "id": "greenCoverage",
+      "label": "green/leaf pixel coverage (ExG threshold)"
+    },
+    {
+      "id": "chlorosisIdx",
+      "label": "yellowing fraction (R≈G>B, moderate brightness)"
+    },
+    {
+      "id": "whiteningIdx",
+      "label": "pale/whitish low-saturation fraction (downy-growth proxy)"
+    },
+    {
+      "id": "lesionIdx",
+      "label": "brown/dark necrotic fraction"
+    },
+    {
+      "id": "textureEnergy",
+      "label": "high-frequency energy (lesion texture proxy)"
+    },
+    {
+      "id": "blurScore",
+      "label": "Laplacian-variance blur score"
+    }
+  ],
+  "classes": [
+    {
+      "id": "healthy",
+      "labelEn": "Healthy / no strong signal",
+      "labelHi": "स्वस्थ / कोई स्पष्ट लक्षण नहीं",
+      "spreadRisk": "low",
+      "weights": {
+        "greenCoverage": 0.6,
+        "chlorosisIdx": -1.6,
+        "whiteningIdx": -2.0,
+        "lesionIdx": -1.6,
+        "textureEnergy": -0.3
+      },
+      "bias": 0.2
+    },
+    {
+      "id": "downy_mildew_suspect",
+      "labelEn": "Downy-mildew-type pattern (suspected)",
+      "labelHi": "डाउनी फफूंदी जैसा पैटर्न (संदिग्ध)",
+      "spreadRisk": "high",
+      "weights": {
+        "greenCoverage": 0.1,
+        "chlorosisIdx": 0.6,
+        "whiteningIdx": 5.0,
+        "lesionIdx": -0.2,
+        "textureEnergy": 0.3
+      },
+      "bias": -0.6
+    },
+    {
+      "id": "leaf_lesion_suspect",
+      "labelEn": "Leaf-spot / lesion pattern (suspected)",
+      "labelHi": "पत्ती धब्बा/क्षति पैटर्न (संदिग्ध)",
+      "spreadRisk": "medium",
+      "weights": {
+        "greenCoverage": 0.2,
+        "chlorosisIdx": 0.2,
+        "whiteningIdx": -0.5,
+        "lesionIdx": 2.6,
+        "textureEnergy": 0.5
+      },
+      "bias": -0.9
+    },
+    {
+      "id": "nutrient_stress_suspect",
+      "labelEn": "Uniform chlorosis / nutrient-stress pattern (suspected)",
+      "labelHi": "एकसमान पीलापन / पोषण-तनाव पैटर्न (संदिग्ध)",
+      "spreadRisk": "low",
+      "weights": {
+        "greenCoverage": -0.2,
+        "chlorosisIdx": 2.2,
+        "whiteningIdx": -0.4,
+        "lesionIdx": -0.6,
+        "textureEnergy": -0.5
+      },
+      "bias": -0.7
+    },
+    {
+      "id": "unknown_unsupported",
+      "labelEn": "Unknown / unsupported pattern",
+      "labelHi": "अज्ञात / असमर्थित पैटर्न",
+      "spreadRisk": "low",
+      "weights": {
+        "greenCoverage": -1.2,
+        "chlorosisIdx": 0.0,
+        "whiteningIdx": 0.0,
+        "lesionIdx": 0.0,
+        "textureEnergy": 0.2
+      },
+      "bias": -0.2
+    }
+  ],
+  "cropSupport": {
+    "bajra": [
+      "healthy",
+      "downy_mildew_suspect",
+      "leaf_lesion_suspect",
+      "nutrient_stress_suspect",
+      "unknown_unsupported"
+    ],
+    "mustard": [
+      "healthy",
+      "downy_mildew_suspect",
+      "leaf_lesion_suspect",
+      "nutrient_stress_suspect",
+      "unknown_unsupported"
+    ],
+    "guar": [
+      "healthy",
+      "leaf_lesion_suspect",
+      "nutrient_stress_suspect",
+      "unknown_unsupported"
+    ],
+    "cumin": [
+      "healthy",
+      "leaf_lesion_suspect",
+      "nutrient_stress_suspect",
+      "unknown_unsupported"
+    ]
+  },
+  "policy": {
+    "abstainMaxProbBelow": 0.45,
+    "abstainGreenCoverageBelow": 0.08,
+    "expertAlwaysIfSpreadRisk": "high",
+    "calibration": "temperature 1.0 (uncalibrated — labelled raw)"
+  }
+}
