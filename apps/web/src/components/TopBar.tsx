@@ -13,6 +13,7 @@ const NAV: { href: string; key: I18nKey }[] = [
   { href: "/expert", key: "nav.expert" },
   { href: "/outbreaks", key: "nav.outbreaks" },
   { href: "/missions", key: "nav.missions" },
+  { href: "/support", key: "nav.support" },
   { href: "/governance", key: "nav.governance" },
   { href: "/integrations", key: "nav.integrations" },
   { href: "/demo", key: "nav.demo" },

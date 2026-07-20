@@ -276,6 +276,36 @@ export class DemoStore {
     return fu;
   }
 
+  createReferral(caseId: string, input: { kvkId: string; reason: string; note: string; channel?: "in_app_pack" | "printable_card" }) {
+    const c = this.getCase(caseId);
+    if (!c) return undefined;
+    const at = nowIso();
+    const n = this.state.referrals.length + 1;
+    const ref: import("@contracts").Referral = {
+      id: `REF-${2600 + n}`, caseId, kvkId: input.kvkId, reason: input.reason, note: input.note,
+      createdBy: "expert.demo", createdAt: at, status: "SHARED",
+      statusHistory: [{ status: "SHARED", at, actor: "expert.demo", note: "Evidence bundle shared with KVK (simulated delivery)" }],
+      channel: input.channel ?? "in_app_pack",
+    };
+    this.state.referrals.push(ref);
+    this.append(c, at, "kvk_referral", "expert (KVK persona, demo)",
+      `Referred to ${input.kvkId} — ${input.reason}`);
+    this.emit();
+    return ref;
+  }
+
+  updateReferralStatus(refId: string, status: import("@contracts").ReferralStatus, note?: string) {
+    const ref = this.state.referrals.find((r) => r.id === refId);
+    if (!ref) return undefined;
+    const at = nowIso();
+    ref.status = status;
+    ref.statusHistory.push({ status, at, actor: "expert.demo", ...(note ? { note } : {}) });
+    const c = this.getCase(ref.caseId);
+    if (c) this.append(c, at, "kvk_referral_update", "KVK expert (demo)", `Referral ${ref.id} → ${status}${note ? ` — ${note}` : ""}`);
+    this.emit();
+    return ref;
+  }
+
   generateMission(clusterId: string): FieldMission | { error: string } {
     const cl = this.state.clusters.find((x) => x.id === clusterId);
     if (!cl) return { error: "cluster not found" };

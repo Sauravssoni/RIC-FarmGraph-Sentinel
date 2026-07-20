@@ -158,11 +158,26 @@ export interface IntegrationAdapterStatus {
 
 export interface Persona { id: string; label: string; role: Role; note: string; }
 
+export interface KvkRecord {
+  id: string; name: string; district: string; address: string; host: string;
+  phone: string; email: string; website: string;
+  lat: number; lon: number; coordsApproximate: boolean;
+  specialities: string[]; source: string;
+}
+export type ReferralStatus = "DRAFT" | "SHARED" | "ACKNOWLEDGED" | "RESPONDED" | "CLOSED";
+export interface Referral {
+  id: string; caseId: string; kvkId: string; reason: string; note: string;
+  createdBy: string; createdAt: string; status: ReferralStatus;
+  statusHistory: { status: ReferralStatus; at: string; actor: string; note?: string }[];
+  channel: "in_app_pack" | "printable_card";
+}
+
 export interface DemoSeed {
   meta: { scenario: string; demoNow: string; generatedBy: string; provenance: string; pilotRegions: string[] };
   personas: Persona[]; farmers: FarmerReference[]; plots: PlotReference[]; cropSeasons: CropSeason[];
   cases: Case[]; clusters: OutbreakCluster[]; missions: FieldMission[];
   advisories: Advisory[]; modelVersions: ModelVersion[]; auditEvents: AuditEvent[];
+  referrals: Referral[];
 }
 
 export interface OverviewKpis {
