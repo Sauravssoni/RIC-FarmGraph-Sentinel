@@ -307,3 +307,18 @@ def test_sqlite_persistence_across_restart(tmp_path, monkeypatch):
     r2.reset()
     assert r2.get_case("C-2614")["state"] == "DRAFT"
     assert len(r2.learning_records) == 0
+
+
+# ---------------- public-data connector (Phase J) ----------------
+
+def test_public_data_snapshot(client):
+    body = client.get("/api/v1/public-data").json()
+    assert body["servedAs"] == "CACHED"
+    assert body["fetchedAt"]
+    wb = body["sources"]["world_bank_india_ag"]
+    assert wb["status"] == "LIVE_FETCHED"
+    assert any(i["latest"] for i in wb["indicators"])
+    # honest labels: every source carries a status + note, none claims live serving
+    for src in body["sources"].values():
+        assert src["status"] in ("LIVE_FETCHED", "KEY_REQUIRED", "UNREACHABLE")
+        assert src["note"]

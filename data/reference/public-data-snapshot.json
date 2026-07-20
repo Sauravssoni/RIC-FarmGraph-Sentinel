@@ -1,0 +1,140 @@
+{
+ "snapshotId": "PDS-20260720T173952Z",
+ "fetchedAt": "2026-07-20T17:40:54+00:00",
+ "servedAs": "CACHED",
+ "honestyNote": "This snapshot is served by the web app and API with a CACHED label and this fetchedAt timestamp. Sources fetch live when this script runs; the shipped artifact is a cache, never claimed to be a live feed.",
+ "sources": {
+  "world_bank_india_ag": {
+   "status": "LIVE_FETCHED",
+   "url": "https://data.worldbank.org (public API, no key)",
+   "note": "World Bank Open Data macro indicators for India — context only, not an operational feed.",
+   "indicators": [
+    {
+     "id": "AG.LND.AGRI.ZS",
+     "label": "Agricultural land (% of land area)",
+     "latest": {
+      "date": "2023",
+      "value": 60.0604064994165
+     },
+     "series": [
+      {
+       "date": "2023",
+       "value": 60.0604064994165
+      },
+      {
+       "date": "2022",
+       "value": 60.0555856504293
+      },
+      {
+       "date": "2021",
+       "value": 60.0507647678083
+      },
+      {
+       "date": "2020",
+       "value": 60.0459439188212
+      },
+      {
+       "date": "2019",
+       "value": 60.2198312250478
+      }
+     ]
+    },
+    {
+     "id": "SP.RUR.TOTL.ZS",
+     "label": "Rural population (% of total population)",
+     "latest": {
+      "date": "2024",
+      "value": 64.6211027631611
+     },
+     "series": [
+      {
+       "date": "2024",
+       "value": 64.6211027631611
+      },
+      {
+       "date": "2023",
+       "value": 64.9323081575814
+      },
+      {
+       "date": "2022",
+       "value": 65.2444326005794
+      },
+      {
+       "date": "2021",
+       "value": 65.5574482818696
+      },
+      {
+       "date": "2020",
+       "value": 65.8713273911667
+      },
+      {
+       "date": "2019",
+       "value": 66.1860421181853
+      }
+     ]
+    },
+    {
+     "id": "AG.CON.FERT.ZS",
+     "label": "Fertilizer consumption (kg per hectare of arable land)",
+     "latest": {
+      "date": "2023",
+      "value": 199.141215854816
+     },
+     "series": [
+      {
+       "date": "2023",
+       "value": 199.141215854816
+      },
+      {
+       "date": "2022",
+       "value": 193.754969391567
+      },
+      {
+       "date": "2021",
+       "value": 193.601012213706
+      },
+      {
+       "date": "2020",
+       "value": 210.69195830144
+      },
+      {
+       "date": "2019",
+       "value": 186.456757783084
+      }
+     ]
+    }
+   ]
+  },
+  "open_meteo_jodhpur": {
+   "status": "LIVE_FETCHED",
+   "url": "https://open-meteo.com (CC-BY 4.0, no key; aggregates national weather models)",
+   "note": "Current weather at the demo golden plot (Balesar, Jodhpur). Open-Meteo is open data, NOT IMD; IMD remains the cited authority for climate normals (see research-evidence.json).",
+   "location": {
+    "lat": 26.397186,
+    "lon": 72.9703,
+    "elevationM": 258.0
+   },
+   "current": {
+    "time": "2026-07-20T23:00",
+    "interval": 900,
+    "temperature_2m": 31.3,
+    "relative_humidity_2m": 59,
+    "precipitation": 0.0,
+    "wind_speed_10m": 12.2
+   },
+   "units": {
+    "time": "iso8601",
+    "interval": "seconds",
+    "temperature_2m": "°C",
+    "relative_humidity_2m": "%",
+    "precipitation": "mm",
+    "wind_speed_10m": "km/h"
+   }
+  },
+  "datagovin_agmarknet": {
+   "status": "KEY_REQUIRED",
+   "url": "https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070 (AGMARKNET mandi prices)",
+   "note": "data.gov.in requires a free API key (signup at data.gov.in). No key is shipped with this repository; set DATAGOVIN_API_KEY and re-run to make this source live. Not attempted without a key — no fabricated access."
+  }
+ }
+}

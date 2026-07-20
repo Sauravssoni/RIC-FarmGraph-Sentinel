@@ -45,6 +45,7 @@ class DemoRepository:
         self.engine = DeterministicEngine(self.policy, self.taxonomy)
         self._seed = _load("seed.json")
         self.kvks = _load_ref("kvk-directory.json")["kvks"]
+        self.public_data_snapshot = _load_ref("public-data-snapshot.json")
         self.store: Optional[SQLStore] = (
             None if os.environ.get("FGR_PERSIST") == "memory" else default_store()
         )

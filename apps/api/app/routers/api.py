@@ -374,3 +374,10 @@ async def upload_evidence(request: Request, file: UploadFile = File(...), _role:
 def governance_audit(request: Request, limit: int = Query(200, ge=1, le=1000)) -> dict[str, Any]:
     r = repo(request)
     return {"events": r.audit_events[-limit:], "total": len(r.audit_events), "provenance": "SIMULATED"}
+
+
+@router.get("/public-data")
+def public_data(request: Request) -> dict[str, Any]:
+    """Cached public-data snapshot (scripts/fetch_public_data.py). Served with
+    its fetchedAt timestamp and a CACHED label — never claimed as a live feed."""
+    return repo(request).public_data_snapshot
