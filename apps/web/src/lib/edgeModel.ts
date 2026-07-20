@@ -190,7 +190,7 @@ export async function runOnnxScreening(img: ImageData): Promise<ScreeningResult 
     if (!sessionPromise) {
       sessionPromise = ort.InferenceSession.create("/models/mobilenetv2-7.onnx", { executionProviders: ["wasm"] });
     }
-    const session = (await sessionPromise) as InstanceType<typeof ort.InferenceSession>;
+    const session = (await sessionPromise) as import("onnxruntime-web").InferenceSession;
 
     // Preprocess: resize to 224×224, normalise to [0,1], CHW float32.
     const canvas = document.createElement("canvas");

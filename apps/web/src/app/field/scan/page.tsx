@@ -13,6 +13,7 @@ import { CROPS, SYMPTOMS, SEED } from "@/lib/seed";
 import { clearDraft, enqueue, loadDraft, markAttempt, outboxItems, removeOutbox, saveDraft } from "@/lib/offline";
 import { DiagnosisPanel } from "@/components/DiagnosisPanel";
 import { StatusChip } from "@/components/bits";
+import CaptureStudio, { type CaptureBundle } from "@/components/CaptureStudio";
 import type { CaptureChecklist, Case, DiagnosisResult } from "@contracts";
 
 const formSchema = z.object({
@@ -40,7 +41,7 @@ export default function FieldScan() {
   const [phase, setPhase] = useState<Phase>("consent");
   const [consent, setConsent] = useState(false);
   const [checklist, setChecklist] = useState<CaptureChecklist>({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false });
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [bundle, setBundle] = useState<CaptureBundle | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [done, setDone] = useState<{ c: Case; d: DiagnosisResult | null } | null>(null);
   const [resume, setResume] = useState(false);
@@ -105,9 +106,19 @@ export default function FieldScan() {
         createdOffline: offline, consentChannel: "typed",
       });
     }
-    store.addObservation(c.id, { symptomCategory: values.symptomCategory, symptomNote: values.symptomNote ?? "", checklist });
+    store.addObservation(c.id, {
+      symptomCategory: values.symptomCategory, symptomNote: values.symptomNote ?? "", checklist,
+      ...(bundle && bundle.imageIds.length > 0
+        ? {
+            imageIds: bundle.imageIds, imageHashes: bundle.imageHashes,
+            pixelQuality: bundle.pixelQuality,
+            ...(bundle.inference ? { edgeInference: bundle.inference as unknown as import("@contracts").EdgeInferenceRecord } : {}),
+          }
+        : {}),
+    });
     let d: DiagnosisResult | null = null;
-    if (quality.passed) d = store.triage(c.id) ?? null;
+    const pixelGateOk = !bundle || bundle.imageIds.length === 0 || bundle.pixelQuality.pass;
+    if (quality.passed && pixelGateOk) d = store.triage(c.id) ?? null;
     if (offline && !activeCaseId) {
       await enqueue({ kind: "case-report", payload: { caseId: c.id } });
       setOutboxN((n) => n + 1);
@@ -232,7 +243,7 @@ export default function FieldScan() {
       {phase === "capture" && (
         <section className="card mt-4 p-4">
           <h2 className="text-lg font-extrabold text-ink-900">{t("scan.capture.title")}</h2>
-          <p className="mt-1 text-xs text-ink-500">Quality gate is checklist-driven in Task 001 (no computer-vision claims). Each item is one photo/view.</p>
+          <p className="mt-1 text-xs text-ink-500">Guided views below + real pixel analysis of every photo. Both stages are explained; neither is expert confirmation.</p>
           <div className="mt-3 grid gap-2">
             {CHECKLIST.map((item) => (
               <label key={item.key} className={`flex min-h-[52px] items-center gap-3 rounded-lg border px-3 text-sm font-semibold ${checklist[item.key] ? "border-leaf-600/50 bg-leaf-50" : "border-sand-300"}`}>
@@ -241,11 +252,7 @@ export default function FieldScan() {
               </label>
             ))}
           </div>
-          <label className="btn-secondary mt-3 flex w-full cursor-pointer items-center justify-center gap-2">
-            📷 {t("scan.capture.addPhoto")}
-            <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhotos((p) => [...p, f.name]); }} />
-          </label>
-          {photos.length > 0 && !app.lowBandwidth && <p className="mt-1 text-xs text-ink-500">Attached: {photos.join(", ")}</p>}
+          <CaptureStudio crop={values.crop} onChange={setBundle} />
 
           <div className={`mt-3 rounded-lg border px-3 py-2 ${quality.passed ? "border-leaf-600/40 bg-leaf-50" : "border-saffron-500/40 bg-saffron-50"}`} aria-live="polite">
             <div className="flex items-center justify-between text-sm font-bold">
@@ -256,6 +263,12 @@ export default function FieldScan() {
             {!quality.passed && (
               <div className="mt-1 text-xs text-ink-700">
                 <span className="font-bold">{t("scan.quality.recapture")}</span> {quality.recaptureRequests.join(", ")}
+              </div>
+            )}
+            {bundle && bundle.imageIds.length > 0 && (
+              <div className="mt-1 border-t border-sand-300 pt-1 text-xs text-ink-700">
+                <span className="font-bold">Pixel quality (real image analysis):</span>{" "}
+                {bundle.pixelQuality.pass ? `✓ ${(bundle.pixelQuality.score * 100).toFixed(0)}%` : `✗ ${(bundle.pixelQuality.score * 100).toFixed(0)}% — ${bundle.pixelQuality.recaptureInstructions[0] ?? "recapture needed"}`}
               </div>
             )}
           </div>
@@ -291,11 +304,17 @@ export default function FieldScan() {
             <p className="mt-2 text-xs text-ink-500">
               {done.c.pendingSync ? t("scan.saved.offline") : t("scan.synced")} · report and photos stay available offline on this device.
             </p>
+            {done.c.observations.at(-1)?.edgeInference && (
+              <p className="mt-1 text-xs text-ink-600">
+                <span className="chip mr-1 bg-ink-800 text-white">{done.c.observations.at(-1)!.edgeInference!.providerKind}</span>
+                {done.c.observations.at(-1)!.edgeInference!.topClass} · raw {done.c.observations.at(-1)!.edgeInference!.topScore.toFixed(2)} · research preview, expert verification required.
+              </p>
+            )}
           </div>
           {done.d && <DiagnosisPanel d={done.d} compact />}
           <div className="flex gap-2">
             <Link href="/cases" className="btn-secondary flex-1 text-center">{t("nav.cases")} →</Link>
-            <button type="button" className="btn-primary flex-1" onClick={() => { setDone(null); setPhase("consent"); setConsent(false); setChecklist({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false }); setPhotos([]); form.reset({ crop: "bajra", cropStage: "vegetative", symptomCategory: "", symptomNote: "" }); }}>
+            <button type="button" className="btn-primary flex-1" onClick={() => { setDone(null); setPhase("consent"); setConsent(false); setChecklist({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false }); setBundle(null); form.reset({ crop: "bajra", cropStage: "vegetative", symptomCategory: "", symptomNote: "" }); }}>
               + New report
             </button>
           </div>

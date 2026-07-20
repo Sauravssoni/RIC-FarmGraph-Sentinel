@@ -106,7 +106,7 @@ export async function processImageFile(file: File): Promise<StoredImageMeta> {
 }
 
 function stripBlob(row: ImageRow): StoredImageMeta {
-  const { blob: _blob, ...meta } = row;
+  const { blob: _ignored, ...meta } = row; void _ignored;
   return meta;
 }
 

@@ -124,7 +124,13 @@ export class DemoStore {
     return c;
   }
 
-  addObservation(caseId: string, input: { symptomCategory: string; symptomNote: string; checklist: CaptureChecklist; at?: string }) {
+  addObservation(caseId: string, input: {
+    symptomCategory: string; symptomNote: string; checklist: CaptureChecklist; at?: string;
+    imageIds?: string[]; imageHashes?: string[];
+    pixelQuality?: { score: number; pass: boolean; failedChecks: string[]; recaptureInstructions: string[] };
+    edgeInference?: import("@contracts").EdgeInferenceRecord;
+    voiceNoteId?: string;
+  }) {
     const c = this.getCase(caseId);
     if (!c) return undefined;
     const at = input.at ?? nowIso();
@@ -133,18 +139,31 @@ export class DemoStore {
     const obs = {
       id: `${c.id}-O${n}`, at, symptomCategory: input.symptomCategory, symptomNote: input.symptomNote,
       checklist: input.checklist,
-      imageCount: [input.checklist.leafClose, input.checklist.lowerLeaf, input.checklist.wholePlant].filter(Boolean).length,
+      imageCount: input.imageIds?.length ?? [input.checklist.leafClose, input.checklist.lowerLeaf, input.checklist.wholePlant].filter(Boolean).length,
       imageRef: `sim-evidence://${c.id}/${n}`, quality: q,
+      ...(input.imageIds ? { imageIds: input.imageIds } : {}),
+      ...(input.imageHashes ? { imageHashes: input.imageHashes } : {}),
+      ...(input.pixelQuality ? { pixelQuality: input.pixelQuality } : {}),
+      ...(input.edgeInference ? { edgeInference: input.edgeInference } : {}),
+      ...(input.voiceNoteId ? { voiceNoteId: input.voiceNoteId } : {}),
     };
     c.observations.push(obs);
     this.append(c, at, "capture_submitted", "field worker FW-07 (demo)",
-      `Evidence capture submitted (${obs.imageCount} view(s), coverage ${q.coverageScore.toFixed(2)})`);
-    if (!q.passed) {
+      `Evidence capture submitted (${obs.imageCount} view(s), coverage ${q.coverageScore.toFixed(2)}${input.pixelQuality ? `, pixel-quality ${input.pixelQuality.score.toFixed(2)}` : ""})`);
+    // Quality gate = guided-view checklist AND pixel analysis (when images exist).
+    const pixelFailed = input.pixelQuality ? !input.pixelQuality.pass : false;
+    if (!q.passed || pixelFailed) {
       c.state = "NEEDS_RECAPTURE";
-      this.append(c, at, "quality_failed", "system (demo)", `Quality gate failed: ${q.issues.join("; ")}`);
+      const why = [...q.issues, ...(pixelFailed ? input.pixelQuality!.failedChecks : [])];
+      this.append(c, at, "quality_failed", "system (demo)", `Quality gate failed: ${why.join("; ") || "pixel quality below threshold"}`);
     } else {
-      this.append(c, at, "quality_passed", "system (demo)", `Capture quality gate passed (coverage ${q.coverageScore.toFixed(2)})`);
+      this.append(c, at, "quality_passed", "system (demo)", `Capture quality gate passed (coverage ${q.coverageScore.toFixed(2)}${input.pixelQuality ? `, pixel ${input.pixelQuality.score.toFixed(2)}` : ""})`);
       if (["DRAFT", "CAPTURE_PENDING", "NEEDS_RECAPTURE"].includes(c.state)) c.state = "READY_FOR_TRIAGE";
+    }
+    if (input.edgeInference) {
+      const ei = input.edgeInference;
+      this.append(c, at, "edge_inference", `${ei.providerId} (${ei.providerKind})`,
+        `Edge inference: ${ei.topClass} @ ${ei.topScore.toFixed(2)} raw, uncertainty ${ei.uncertainty.toFixed(2)}${ei.abstain ? " — ABSTAINED" : ""} [research preview, not accuracy]`);
     }
     this.emit();
     return obs;

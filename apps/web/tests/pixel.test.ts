@@ -51,7 +51,7 @@ describe("pixel feature extraction (real ImageData)", () => {
   });
 
   it("blown-out glare: fails overexposure with glare instruction", () => {
-    const img = synthImage(128, 96, (x, y) => (x > 60 ? [255, 255, 255] : GREEN), 20);
+    const img = synthImage(128, 96, (x) => (x > 60 ? [255, 255, 255] : GREEN), 20);
     const q = analyzePixels(img, TEST_POLICY);
     expect(q.checks.find((c) => c.id === "overexposure")!.pass).toBe(false);
     expect(q.recaptureInstructions.some((r) => /glare/i.test(r))).toBe(true);

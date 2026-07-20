@@ -38,9 +38,29 @@ export interface CaptureQuality {
   issues: string[];
   recaptureRequests: string[];
 }
+export interface EdgeInferenceRecord {
+  providerId: string; providerKind: "EDGE_MODEL" | "EDGE_HEURISTIC" | "DETERMINISTIC_FALLBACK" | "EXPERT_ONLY";
+  modelVersion: string; runtime: string; durationMs: number;
+  topClass: string; topScore: number; uncertainty: number;
+  abstain: boolean; abstainReasons: string[];
+  candidates: { classId: string; label: string; rawScore: number; spreadRisk: "low" | "medium" | "high"; supportedForCrop: boolean }[];
+  featuresUsed?: Record<string, number>;
+  screening?: { topLabel: string; topProb: number; plantLike: boolean; plantProb: number } | null;
+  recommendedNext: string[]; note: string; at: string;
+}
+export interface PixelQualitySummary {
+  score: number; pass: boolean;
+  failedChecks: string[]; recaptureInstructions: string[];
+}
 export interface CropObservation {
   id: string; at: string; symptomCategory: string; symptomNote: string;
   checklist: CaptureChecklist; imageCount: number; imageRef: string; quality: CaptureQuality;
+  /** Real image-evidence references (IndexedDB image ids) — Phase B. */
+  imageIds?: string[];
+  imageHashes?: string[];
+  pixelQuality?: PixelQualitySummary;
+  edgeInference?: EdgeInferenceRecord;
+  voiceNoteId?: string;
 }
 export interface EvidenceAsset { ref: string; kind: "simulated-image"; note: string; provenance: Provenance; }
 
