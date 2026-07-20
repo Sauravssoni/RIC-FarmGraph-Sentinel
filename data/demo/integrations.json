@@ -1,0 +1,271 @@
+{
+  "version": "0.1.0-demo",
+  "provenance": "SIMULATED — readiness matrix only. No adapter is live. No government credentials exist in this prototype.",
+  "lastChecked": "2026-07-20",
+  "adapters": [
+    {
+      "id": "rajsso",
+      "name": "RajSSO (Single Sign-On)",
+      "purpose": "Role-based officer/expert authentication for command centre",
+      "direction": "inbound-auth",
+      "minFields": [
+        "ssoId",
+        "role",
+        "department"
+      ],
+      "consentBasis": "Departmental authorisation; officer role mapping required",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "RajSSO client credentials + role mapping approval",
+      "fallback": "Demo persona switcher (clearly labelled, not authentication)",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "jan-aadhaar",
+      "name": "Jan Aadhaar / Farmer ID",
+      "purpose": "Verifiable farmer identity reference for case ownership",
+      "direction": "inbound-reference",
+      "minFields": [
+        "farmerRefId"
+      ],
+      "consentBasis": "Farmer consent + departmental data-sharing approval",
+      "status": "AWAITING_AUTHORITY",
+      "productionDependency": "Formal approval + API access from issuing authority",
+      "fallback": "Pseudonymous farmer reference (RJ-DEMO-F*)",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "e-dharti",
+      "name": "e-Dharti / ULPIN",
+      "purpose": "Plot boundary and ownership reference for precise geolocation",
+      "direction": "inbound-reference",
+      "minFields": [
+        "ulpin",
+        "plotCentroid"
+      ],
+      "consentBasis": "Departmental approval; land-records data governance",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "Revenue dept API access",
+      "fallback": "Manual plot pin-drop on pilot map",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "girdawari",
+      "name": "Girdawari / Crop Sown Registry",
+      "purpose": "Sown-crop verification for crop-season context",
+      "direction": "inbound-reference",
+      "minFields": [
+        "plotRef",
+        "crop",
+        "season"
+      ],
+      "consentBasis": "Departmental approval",
+      "status": "AWAITING_AUTHORITY",
+      "productionDependency": "Agriculture dept data-sharing agreement",
+      "fallback": "Farmer-declared crop and stage",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "raj-kisan-saathi",
+      "name": "Raj Kisan Saathi",
+      "purpose": "Interoperability: advisories and scheme context; Rakshak does not duplicate it",
+      "direction": "bidirectional-reference",
+      "minFields": [
+        "caseRef",
+        "advisoryRef"
+      ],
+      "consentBasis": "Departmental approval",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "MoU / API specification from department",
+      "fallback": "Deep-link placeholder to public portals",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "rajdhara-dss",
+      "name": "Rajdhara / Krishi DSS",
+      "purpose": "Satellite and DSS layers for outbreak context",
+      "direction": "inbound-context",
+      "minFields": [
+        "plotCentroid",
+        "ndviLayerRef"
+      ],
+      "consentBasis": "Departmental approval",
+      "status": "NOT_STARTED",
+      "productionDependency": "Platform partnership",
+      "fallback": "Pilot geospatial view with manual coordinates",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "npss",
+      "name": "NPSS (National Pest Surveillance System)",
+      "purpose": "Interoperability: share verified outbreak evidence; Rakshak does not duplicate NPSS",
+      "direction": "outbound-evidence",
+      "minFields": [
+        "conditionId",
+        "geo",
+        "verificationState"
+      ],
+      "consentBasis": "Departmental approval + data standard mapping",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "NPSS data-exchange specification",
+      "fallback": "Exportable evidence pack (JSON/PDF)",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "kisan-e-mitra",
+      "name": "Kisan e-Mitra",
+      "purpose": "Farmer grievance/Q&A escalation path",
+      "direction": "outbound-referral",
+      "minFields": [
+        "caseRef",
+        "summary"
+      ],
+      "consentBasis": "Farmer consent",
+      "status": "NOT_STARTED",
+      "productionDependency": "GoI API access",
+      "fallback": "Helpline number display",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "bhashini",
+      "name": "Bhashini (language AI)",
+      "purpose": "Hindi + regional-language ASR/TTS for voice interaction",
+      "direction": "inbound-service",
+      "minFields": [
+        "audioRef",
+        "locale",
+        "pipelineId",
+        "taskSequence"
+      ],
+      "consentBasis": "Farmer consent for voice processing",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "Udyat portal onboarding → ULCA pipeline (ASR+NMT+TTS) per published API docs (bhashini.gitbook.io/bhashini-apis). Hindi ASR production-grade; Marwari/Mewari are dialects at research stage per 2026 assessments — must be benchmarked, never assumed.",
+      "fallback": "Hindi/typed regional vocabulary input (current prototype)",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "kvk-directory",
+      "name": "KVK / expert directory",
+      "purpose": "Route expert review to nearest KVK scientist",
+      "direction": "inbound-reference",
+      "minFields": [
+        "kvkId",
+        "district",
+        "speciality"
+      ],
+      "consentBasis": "Public directory data",
+      "status": "PUBLIC_DATA_ONLY",
+      "productionDependency": "Structured directory feed; currently public web data only",
+      "fallback": "Demo expert persona + manual district KVK contact list",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "imd-weather",
+      "name": "IMD / weather",
+      "purpose": "Humidity/rainfall suitability signal for outbreak scoring",
+      "direction": "inbound-signal",
+      "minFields": [
+        "blockRef",
+        "humidity",
+        "rainfall"
+      ],
+      "consentBasis": "Public data / open API terms",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "District/block feed; public climatology available now — IMD station normals (e.g. Jodhpur 42339: 370.2 mm annual, Jul 119.7 / Aug 113.5 mm) already seed the suitability rationale (see data/reference/research-evidence.json).",
+      "fallback": "Fixed simulated suitability value, visibly labelled",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "soil-health-card",
+      "name": "Soil Health Card",
+      "purpose": "Soil nutrient context for nutrient-stress differentials",
+      "direction": "inbound-reference",
+      "minFields": [
+        "plotRef",
+        "n",
+        "p",
+        "k",
+        "ph"
+      ],
+      "consentBasis": "Farmer consent + portal terms",
+      "status": "AWAITING_AUTHORITY",
+      "productionDependency": "SHC portal API access",
+      "fallback": "Farmer-declared soil notes",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "sathi",
+      "name": "SATHI (seed traceability)",
+      "purpose": "Seed lot context in outbreak investigations",
+      "direction": "inbound-reference",
+      "minFields": [
+        "seedLotId"
+      ],
+      "consentBasis": "Departmental approval",
+      "status": "NOT_STARTED",
+      "productionDependency": "SATHI API access",
+      "fallback": "Not used in prototype",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "cibrc",
+      "name": "CIB&RC advisory source",
+      "purpose": "Approved pesticide reference content (versioned) to unlock chemical advisory cards",
+      "direction": "inbound-content",
+      "minFields": [
+        "productRef",
+        "labelClaims",
+        "version"
+      ],
+      "consentBasis": "Licensed/approved content only",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "Approved, versioned content pipeline + expert sign-off",
+      "fallback": "Chemical recommendations remain LOCKED (current behaviour)",
+      "owner": "Syntheon agronomy board (to be constituted)"
+    },
+    {
+      "id": "rajsampark",
+      "name": "RajSampark",
+      "purpose": "Grievance escalation for unresolved cases",
+      "direction": "outbound-referral",
+      "minFields": [
+        "caseRef",
+        "category"
+      ],
+      "consentBasis": "Farmer consent",
+      "status": "CONTRACT_DEFINED",
+      "productionDependency": "RajSampark API access",
+      "fallback": "Display 181/helpline guidance",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "e-mitra",
+      "name": "e-Mitra",
+      "purpose": "Assisted-service delivery point for farmers without smartphones",
+      "direction": "inbound-assisted",
+      "minFields": [
+        "kioskId",
+        "caseRef"
+      ],
+      "consentBasis": "Farmer consent at kiosk",
+      "status": "NOT_STARTED",
+      "productionDependency": "e-Mitra integration approval",
+      "fallback": "Field-worker-assisted reporting (current flow)",
+      "owner": "Syntheon integration team"
+    },
+    {
+      "id": "agmarknet-enam",
+      "name": "AGMARKNET / e-NAM",
+      "purpose": "Market-context signal for post-recovery advisory (optional)",
+      "direction": "inbound-context",
+      "minFields": [
+        "crop",
+        "mandiRef"
+      ],
+      "consentBasis": "Public data terms",
+      "status": "PUBLIC_DATA_ONLY",
+      "productionDependency": "Free registered API key from data.gov.in (OGD Platform, NIC; 100k+ resources via api.data.gov.in/resource/{index}); AGMARKNET price datasets queryable today — no MoU needed.",
+      "fallback": "Not used in prototype UI; concrete public-API pathway documented",
+      "owner": "Syntheon integration team"
+    }
+  ]
+}

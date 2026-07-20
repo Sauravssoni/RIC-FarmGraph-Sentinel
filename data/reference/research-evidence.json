@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "purpose": "Public, verifiable government/institutional research and data that ground FarmGraph Rakshak design decisions. Every entry states what is used, where, and under what access type. Nothing here implies live API connectivity.",
+    "accessedOn": "2026-07-20",
+    "accessTypes": ["OFFICIAL_PUBLIC_DATA", "PUBLISHED_RESEARCH", "PUBLIC_API_INFRASTRUCTURE", "OFFICIAL_DOCUMENTATION"]
+  },
+  "evidence": [
+    {
+      "id": "EV-IMD-JODHPUR-NORMALS",
+      "claim": "Jodhpur (IMD station 42339) climate normals: annual mean total rainfall 370.2 mm; July 119.7 mm and August 113.5 mm (≈63% of annual rain in two months); ~20.9 rainy days/year; mean annual daily-max 34.0°C.",
+      "institution": "India Meteorological Department (IMD), Ministry of Earth Sciences",
+      "source": "IMD Jaipur — station climatological extremes/normals, Jodhpur 42339 (PDF)",
+      "url": "https://mausam.imd.gov.in/jaipur/mcdata/extreme_jodhpur.pdf",
+      "accessType": "OFFICIAL_PUBLIC_DATA",
+      "usedIn": "Rationale for the outbreak weather-suitability component: downy mildew risk concentrates in the Jul–Aug humid window; pilot calendar aligns to kharif sowing after monsoon onset.",
+      "honestyNote": "Normals are context only. The live weather-suitability component is a seeded placeholder until a district-level IMD feed is wired (adapter PUBLIC_DATA_ONLY)."
+    },
+    {
+      "id": "EV-CGWB-JODHPUR-RAINFALL",
+      "claim": "Jodhpur district: IMD normal rainfall 314 mm; 44-year (1970–2014) average 373.7 mm; July+August deliver ~68% of rainfall; the district suffered moderate droughts in 1974, 1984–87, 1991, 1993, 2009 and severe drought in 2002.",
+      "institution": "Central Ground Water Board (CGWB), Government of India",
+      "source": "Jodhpur District groundwater information booklet (government publication citing IMD)",
+      "url": "https://cgwb.gov.in/sites/default/files/2022-11/jodhpur.pdf",
+      "accessType": "OFFICIAL_PUBLIC_DATA",
+      "usedIn": "docs/problem-research.md — why rainfed pest/disease surveillance in these districts must assume drought-stressed, low-biomass crops and compressed scouting windows.",
+      "honestyNote": "District-level context, not a real-time data feed."
+    },
+    {
+      "id": "EV-ICAR-AICPMIP-DM-MANAGEMENT",
+      "claim": "AICPMIP-recommended pearl millet downy mildew management integrates: resistant cultivars; hybrid/variety rotation; seed treatment research (e.g. Apron 35 SD); roguing of infected plants with burying/burning; foliar intervention thresholds researched at 2–5% infection.",
+      "institution": "ICAR — All India Coordinated Pearl Millet Improvement Project (AICPMIP)",
+      "source": "AICPMIP — Pearl Millet Diseases (official project site)",
+      "url": "http://www.aicpmip.res.in/pathogolical.html",
+      "accessType": "PUBLISHED_RESEARCH",
+      "usedIn": "Golden advisory ADV-2601 'Do now' steps (rogue out and bury/burn infected plants; improve airflow) mirror the published cultural-control recommendations. Expert escalation triggers follow the researched low-threshold logic.",
+      "honestyNote": "Chemical names/doses exist in the cited research but are deliberately NOT surfaced in the app — chemical content stays locked behind approved, CIB&RC-aligned advisories."
+    },
+    {
+      "id": "EV-ICRISAT-DM-IDM",
+      "claim": "ICRISAT's pearl millet downy mildew management monograph documents IDM modules combining moderate host resistance, reduced-dose metalaxyl seed treatment, and bioagents (Bacillus pumilus INR 7, Trichoderma harzianum, Pseudomonas fluorescens, chitosan), validated across AICPMIP locations.",
+      "institution": "ICRISAT (CGIAR) with AICPMIP programme references",
+      "source": "Downy Mildew of Pearl Millet and its Management (ICRISAT Open Access Repository)",
+      "url": "https://oar.icrisat.org/9411/1/Downy%20mildew%20of%20pearl%20millet%20and%20its%20management.pdf",
+      "accessType": "PUBLISHED_RESEARCH",
+      "usedIn": "Taxonomy design: downy_mildew is modelled as a high-spread-risk condition that always escalates to expert review; monitoring steps (re-inspect every 48h, re-photograph marked plants) reflect the disease's humidity-driven sporulation cycle documented here.",
+      "honestyNote": "Research lineage is cited for credibility; no treatment dose is encoded in the product."
+    },
+    {
+      "id": "EV-JAU-BIOAGENT-TRIAL",
+      "claim": "Three-year kharif field trials (2021–2023, JAU Jamnagar) found Trichoderma harzianum seed treatment (8 g/kg) statistically at par with metalaxyl (6 g/kg) for downy mildew incidence (~10–12% vs 18.6% control).",
+      "institution": "Junagadh Agricultural University — Pearl Millet Research Station",
+      "source": "Chaudhari et al. 2024, Management of Pearl Millet Downy Mildew Disease by Organic Practices",
+      "url": "https://www.researchtrend.net/bfij/pdf/Management-of-Pearl-Millet-Downy-Mildew-Disease-by-Organic-Practices-RJ-CHAUDHARI-11.pdf",
+      "accessType": "PUBLISHED_RESEARCH",
+      "usedIn": "Advisory safety posture: credible non-chemical options exist, which is why immediate farmer-facing steps can be genuinely useful while chemical content remains locked.",
+      "honestyNote": "Single-station trial evidence; advisory versions require KVK expert approval before issue."
+    },
+    {
+      "id": "EV-DATAGOVIN-API",
+      "claim": "data.gov.in (Open Government Data Platform India, NIC) exposes 100,000+ datasets as REST resources via api.data.gov.in/resource/{index} with a free registered API key (registration on data.gov.in 'My Account'; sample/demo key format published).",
+      "institution": "National Informatics Centre (NIC), MeitY — OGD Platform India",
+      "source": "data.gov.in developer documentation and community wrappers",
+      "url": "https://www.data.gov.in/",
+      "accessType": "PUBLIC_API_INFRASTRUCTURE",
+      "usedIn": "AGMARKNET/e-NAM adapter: market-context data is reachable TODAY through the public OGD API with a free key — no MoU required. This is the strongest real integration available to a Task-001-stage product.",
+      "honestyNote": "Adapter remains PUBLIC_DATA_ONLY in this repo: no key is committed and no live calls are made. The integration matrix documents the concrete path (register key → resource index → district filter)."
+    },
+    {
+      "id": "EV-BHASHINI-ULCA",
+      "claim": "Bhashini (Digital India Bhashini Division, MeitY) exposes language AI through the ULCA platform: pipeline APIs supporting ASR / NMT / TTS task sequences (ASR+NMT+TTS), model IDs from IIT/IITM/IIITH/CDAC research groups, onboarding via the Udyat portal; published API docs describe pipeline search → config → compute call flow.",
+      "institution": "Digital India Bhashini Division (MeitY), built on AI4Bharat/ULCA research",
+      "source": "Bhashini API documentation (GitBook) and bhashini.gov.in",
+      "url": "https://bhashini.gitbook.io/bhashini-apis",
+      "accessType": "OFFICIAL_DOCUMENTATION",
+      "usedIn": "Bhashini adapter contract: voice pipeline shape (ASR+NMT+TTS) is designed against the published ULCA pipeline flow.",
+      "honestyNote": "Marwari/Mewari are dialects without scheduled-language ASR coverage; independent 2026 assessments place dialect voice at research stage. The prototype ships Hindi/English with typed regional vocabulary and never claims dialect ASR."
+    },
+    {
+      "id": "EV-NATURAL-EARTH-GEO",
+      "claim": "Natural Earth 1:10m admin-1 boundaries are public domain and include the Rajasthan state outline used for the pilot geospatial view.",
+      "institution": "Natural Earth (community project, public domain terms)",
+      "source": "naturalearthdata.com — 10m cultural admin-1 states/provinces",
+      "url": "https://www.naturalearthdata.com/",
+      "accessType": "OFFICIAL_PUBLIC_DATA",
+      "usedIn": "data/geo/rajasthan-outline.geojson (simplified) — the only boundary the map draws.",
+      "honestyNote": "District polygons are deliberately not shown: a licence-clean, survey-quality district source was not established; district HQs render as labelled reference points instead."
+    }
+  ]
+}

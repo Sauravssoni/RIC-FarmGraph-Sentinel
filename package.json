@@ -1,0 +1,24 @@
+{
+  "name": "farmgraph-rakshak",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FarmGraph Rakshak — Offline Crop Health & Outbreak Intelligence Grid for Rajasthan (Task 001 prototype)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "seed": "python3 data/demo/generate_seed.py",
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "lint": "npm run lint --workspace apps/web",
+    "typecheck": "npm run typecheck --workspace apps/web",
+    "test": "npm run test --workspace apps/web",
+    "test:api": "python3 -m pytest apps/api/tests -q",
+    "e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "api": "cd apps/api && uvicorn app.main:app --reload --port 8000"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

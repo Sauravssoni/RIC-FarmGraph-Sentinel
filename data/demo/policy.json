@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0-demo",
+  "provenance": "SIMULATED — prototype policy thresholds for demonstration only. NOT validated agronomic/clinical thresholds. Must be calibrated with experts before any pilot.",
+  "captureQuality": {
+    "minCoverage": 0.6,
+    "requiredViews": ["leafClose"],
+    "secondaryViews": ["lowerLeaf", "wholePlant"],
+    "minSecondaryViews": 1,
+    "lightingRequired": true,
+    "weights": { "leafClose": 0.4, "lowerLeaf": 0.25, "wholePlant": 0.25, "lightingOk": 0.1 }
+  },
+  "triage": {
+    "autonomousMinScore": 0.85,
+    "autonomousMinMargin": 0.4,
+    "abstainOtherThreshold": 0.5,
+    "highSpreadRiskMinScore": 0.5,
+    "highSpreadRiskEscalates": true,
+    "missingViewsScorePenalty": 0.08
+  },
+  "outbreak": {
+    "weights": { "verifiedRatio": 0.3, "spatialDensity": 0.2, "temporalGrowth": 0.15, "cropStageCompat": 0.1, "weatherSuitability": 0.1, "severityIndex": 0.1 },
+    "duplicatePenaltyWeight": 0.25,
+    "thresholds": { "verifiedOutbreak": 70, "suspected": 40 },
+    "clusterRadiusKm": 6,
+    "growthWindowDays": 7
+  },
+  "sla": { "expertReviewHours": 24, "fieldMissionHours": 48, "followUpDays": 5 },
+  "labels": {
+    "demoBanner": "Demo data — simulated prototype dataset. No real farmer, field or government-system data.",
+    "simulatedConfidence": "Simulated score — deterministic demo logic, not measured model accuracy.",
+    "chemicalLocked": "Approved advisory content required. Chemical recommendations stay locked until an approved, versioned expert advisory exists."
+  }
+}
