@@ -1,0 +1,26 @@
+# Render blueprint — OPTIONAL demo hosting (Task 002).
+# Honest label: these services host the same SIMULATED demo. The API's SQLite
+# store is demo-grade (single node, ephemeral unless a disk is attached).
+# Nothing here connects to any government system.
+
+services:
+  - type: web
+    name: farmgraph-rakshak-api
+    runtime: python
+    rootDir: apps/api
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: FGR_PERSIST
+        value: memory   # free tier has no persistent disk — in-memory demo mode, honestly labelled
+
+  - type: static
+    name: farmgraph-rakshak-web
+    rootDir: .
+    buildCommand: npm ci && python3 data/demo/generate_seed.py && npm run build --workspace apps/web
+    staticPublishPath: apps/web/out
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false     # set to the API service URL above if you deploy both
