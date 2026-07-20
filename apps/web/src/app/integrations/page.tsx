@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { INTEGRATIONS } from "@/lib/seed";
 import snapshotJson from "@data/reference/public-data-snapshot.json";
+import imdSample from "@data/reference/imd-sample-district-forecast.json";
+import whitelistEvidence from "@data/reference/imd-whitelist-evidence.json";
 import { DemoBanner, SectionTitle } from "@/components/bits";
+import { IMD_ATTRIBUTION, WEATHER_STATE_CHIP } from "@/lib/weather";
 import type { IntegrationStatus } from "@contracts";
 
 interface PublicDataSnapshot {
@@ -71,6 +74,46 @@ export default function Integrations() {
           </tbody>
         </table>
       </div>
+
+      {/* IMD government weather — source hierarchy with genuine evidence */}
+      <section className="card mt-4 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-extrabold text-ink-900">IMD weather adapter — government source hierarchy</h2>
+          <span className={`chip ${WEATHER_STATE_CHIP["IMD_IP_WHITELIST_REQUIRED"]}`}>IMD_IP_WHITELIST_REQUIRED</span>
+        </div>
+        <p className="mt-1 text-xs text-ink-500">{IMD_ATTRIBUTION}</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-saffron-500/50 bg-saffron-50 p-3">
+            <p className="text-sm font-bold text-ink-900">① Official IMD API</p>
+            <p className="mt-1 text-xs text-ink-700">
+              Documented endpoint <code className="font-mono text-[10px]">mausam.imd.gov.in/api/current_wx_api.php</code> answered
+              <span className="font-bold"> HTTP 401 — IP/domain whitelisting required</span> (genuine capture:
+              <code className="font-mono text-[10px]"> data/reference/imd-whitelist-evidence.json</code>,
+              {` ${whitelistEvidence.meta.capturedAtUtc.slice(0, 10)}`}).
+            </p>
+            <p className="mt-1 text-[11px] text-ink-500">Activation: IMD IP whitelisting, or DATAGOV_API_KEY for the OGD-hosted IMD product (docs/integrations/imd.md).</p>
+          </div>
+          <div className="rounded-lg border border-sand-300 p-3">
+            <p className="text-sm font-bold text-ink-900">② District contract — labelled SAMPLE SHAPE</p>
+            <p className="mt-1 text-xs text-ink-700">
+              Jodhpur: rain {imdSample.days[0].rainfallForecastMm} mm · RH {imdSample.days[0].rhMorningPct}% · wind {imdSample.days[0].windKmh} km/h · warning {imdSample.warnings[0].level} ({imdSample.warnings[0].type}).
+            </p>
+            <p className="mt-1 text-[11px] font-semibold text-saffron-700">
+              SAMPLE SHAPE — awaiting first whitelisted capture. Never labelled CACHED_IMD_DATA; demonstrates parsing + the explainable outbreak-score component only.
+            </p>
+          </div>
+          <div className="rounded-lg border border-sand-300 p-3">
+            <p className="text-sm font-bold text-ink-900">③ Fallback — Open-Meteo</p>
+            <span className={`chip ${WEATHER_STATE_CHIP["NON_GOVERNMENT_WEATHER_FALLBACK"]}`}>NON_GOVERNMENT_WEATHER_FALLBACK</span>
+            <p className="mt-1 text-xs text-ink-700">
+              Open-Meteo (open data, CC-BY 4.0) is an operational fallback only — <span className="font-bold">not a government source</span>, never promoted to an IMD label, and it moves the outbreak score less than official data (policy multiplier).
+            </p>
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] text-ink-500">
+          Live evaluation: <code className="font-mono">GET /api/v1/integrations/weather?district=Jodhpur</code> · per-cluster explanation: <code className="font-mono">GET /api/v1/outbreaks/CL-2601/weather-context</code> · also visible on the Outbreaks page per cluster.
+        </p>
+      </section>
 
       {/* Public-data connector — genuinely fetched snapshot, served CACHED */}
       <section className="card mt-4 p-4">

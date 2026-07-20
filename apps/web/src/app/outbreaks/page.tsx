@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getStore, useDemoStore } from "@/lib/store";
 import { DemoBanner, SectionTitle, StatusChip } from "@/components/bits";
 import { MapView } from "@/components/MapView";
+import { WeatherContextPanel } from "@/components/WeatherContext";
 import { conditionLabel, cropLabel } from "@/lib/seed";
 import { fmtDateTime } from "@/lib/format";
 import { representativeOrder } from "@/lib/engine";
@@ -59,7 +60,7 @@ export default function Outbreaks() {
           const missing: string[] = [];
           if (activeMembers.some((c) => !c.expertConfirmedCondition)) missing.push("expert verification pending on some members");
           if (activeMembers.some((c) => c.observations.some((o) => !o.checklist.lowerLeaf))) missing.push("lower-leaf-surface evidence incomplete");
-          missing.push("block-level weather feed (adapter CONTRACT_DEFINED, currently fixed placeholder)");
+          const district = members[0]?.district ?? "Jodhpur";
           return (
             <section key={cl.id} className="card p-4" aria-label={`Cluster ${cl.id}`}>
               <div className="flex flex-wrap items-center gap-2">
@@ -114,6 +115,7 @@ export default function Outbreaks() {
                       ))}
                     </ul>
                   </div>
+                  <WeatherContextPanel cluster={cl} district={district} />
                   <div>
                     <h4 className="text-sm font-extrabold">Missing evidence</h4>
                     <ul className="mt-1 list-disc pl-4 text-sm text-ink-600">{missing.map((m) => <li key={m}>{m}</li>)}</ul>

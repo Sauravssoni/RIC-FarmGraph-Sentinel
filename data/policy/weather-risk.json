@@ -1,0 +1,32 @@
+{
+  "version": "weather-risk/v1",
+  "note": "Conservative GENERIC associations only — no crop-specific epidemiological claims. Weights are configurable by agronomy reviewers; every score change must show prior→new with source status and freshness.",
+  "associations": {
+    "moistureSensitiveDiseaseRisk": {
+      "description": "Elevated rainfall forecast or high relative humidity generically raises suitability conditions for moisture-sensitive foliar disease clusters.",
+      "rainfallForecastMmThreshold": 10.0,
+      "humidityPctThreshold": 75,
+      "weight": 0.5
+    },
+    "warningDrivenUrgency": {
+      "description": "Official warning levels raise operational urgency of clusters in the warned district.",
+      "levelWeights": {"YELLOW": 0.1, "ORANGE": 0.3, "RED": 0.5},
+      "weight": 1.0
+    },
+    "windRainFieldAccessRisk": {
+      "description": "High wind or heavy rain degrades field-mission access — reported as operational context, NOT added to the outbreak score.",
+      "windKmhThreshold": 40.0,
+      "rainfallMmThreshold": 25.0
+    }
+  },
+  "baselineSuitability": 0.2,
+  "stateMultipliers": {
+    "LIVE_IMD_API": 1.0,
+    "CACHED_IMD_DATA": 0.9,
+    "IMD_STALE_CACHE": 0.6,
+    "IMD_IP_WHITELIST_REQUIRED": 0.5,
+    "NON_GOVERNMENT_WEATHER_FALLBACK": 0.5,
+    "SIMULATED_WEATHER": 0.0
+  },
+  "stateMultiplierNote": "Fallback or sample-derived weather moves the score LESS than official IMD data; SIMULATED_WEATHER never moves the score (multiplier 0 → prior kept, explanation still shown)."
+}

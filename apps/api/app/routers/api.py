@@ -474,3 +474,25 @@ def confirm_voice_transcript(request: Request, case_id: str, body: VoiceTranscri
     if not case:
         raise HTTPException(status_code=404, detail=f"Case {case_id} not found")
     return r.attach_voice_transcript(case, body.model_dump())
+
+
+# ---------------------------------------------------------------------------
+# IMD government weather (Task 003 Phase 2C) — source hierarchy with exact
+# states; Open-Meteo is a separately labelled non-government fallback.
+# ---------------------------------------------------------------------------
+
+@router.get("/integrations/weather")
+def integration_weather(request: Request, district: str = Query(default="Jodhpur")) -> dict[str, Any]:
+    """Normalised district weather contract with the integration state
+    (LIVE_IMD_API / IMD_IP_WHITELIST_REQUIRED / NON_GOVERNMENT_WEATHER_FALLBACK / …)."""
+    return repo(request).weather_for_district(district)
+
+
+@router.get("/outbreaks/{cluster_id}/weather-context")
+def outbreak_weather_context(request: Request, cluster_id: str) -> dict[str, Any]:
+    """Explainable weather-suitability component for an outbreak cluster:
+    prior→new, variables, reason, score effect, freshness, source status."""
+    try:
+        return repo(request).cluster_weather_context(cluster_id)
+    except AdvisoryRejected as exc:
+        raise HTTPException(status_code=404, detail={"code": exc.code, "detail": exc.detail}) from exc

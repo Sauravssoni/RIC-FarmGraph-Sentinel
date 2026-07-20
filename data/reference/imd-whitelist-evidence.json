@@ -1,0 +1,18 @@
+{
+ "meta": {
+  "purpose": "Genuine capture of the official IMD API whitelist gate \u2014 evidence for the IMD_IP_WHITELIST_REQUIRED integration state.",
+  "capturedAtUtc": "2026-07-20T23:07:20+00:00",
+  "capturedBy": "scripts/imd probe (this environment)"
+ },
+ "request": {
+  "method": "GET",
+  "url": "https://mausam.imd.gov.in/api/current_wx_api.php",
+  "note": "Documented IMD current-weather API endpoint (mausam.imd.gov.in)"
+ },
+ "response": {
+  "httpStatus": 401,
+  "bodyExcerpt": "Your IP/Domain 39.105.173.128 needs to be whitelisted",
+  "sha256": "d743641e56c9673dd439cbdc5bb4f34181ca56ae7fb1132640348b35a285f9a5"
+ },
+ "conclusion": "IMD_IP_WHITELIST_REQUIRED"
+}

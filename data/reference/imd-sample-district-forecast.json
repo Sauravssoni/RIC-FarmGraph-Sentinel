@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "provenance": "SAMPLE SHAPE — AWAITING FIRST WHITELISTED CAPTURE. This artefact demonstrates the IMD district-forecast contract (field shapes per the IMD District Agromet Advisory / medium-range district forecast bulletin format). It is NOT an official IMD capture and must never be labelled CACHED_IMD_DATA. Replace via a whitelisted fetch (see docs/integrations/imd.md); the real whitelist gate is evidenced in imd-whitelist-evidence.json.",
+    "shapedOn": "2026-07-21",
+    "officialFormatReference": "IMD District Agromet Advisory Service (DAMS) bulletin structure + district medium-range forecast fields"
+  },
+  "district": "Jodhpur",
+  "state": "Rajasthan",
+  "issueTime": "2026-07-20T17:30:00+05:30",
+  "validFrom": "2026-07-21T00:00:00+05:30",
+  "validTo": "2026-07-25T23:59:59+05:30",
+  "sourceProduct": "District Agromet Advisory (shape)",
+  "stationOrDistrictId": "district:Jodhpur",
+  "days": [
+    {"date": "2026-07-21", "rainfallForecastMm": 18.2, "tMaxC": 36.4, "tMinC": 27.0, "rhMorningPct": 82, "rhEveningPct": 58, "windKmh": 16.0, "condition": "generally cloudy with light to moderate rain"},
+    {"date": "2026-07-22", "rainfallForecastMm": 12.6, "tMaxC": 35.8, "tMinC": 26.6, "rhMorningPct": 80, "rhEveningPct": 60, "windKmh": 18.4, "condition": "cloudy with rain spells"},
+    {"date": "2026-07-23", "rainfallForecastMm": 4.1, "tMaxC": 36.9, "tMinC": 26.9, "rhMorningPct": 74, "rhEveningPct": 52, "windKmh": 14.2, "condition": "partly cloudy, isolated rain"},
+    {"date": "2026-07-24", "rainfallForecastMm": 0.4, "tMaxC": 38.1, "tMinC": 27.4, "rhMorningPct": 66, "rhEveningPct": 44, "windKmh": 12.8, "condition": "partly cloudy"},
+    {"date": "2026-07-25", "rainfallForecastMm": 0.0, "tMaxC": 38.8, "tMinC": 27.8, "rhMorningPct": 60, "rhEveningPct": 40, "windKmh": 11.6, "condition": "mainly clear"}
+  ],
+  "observedRainfallMm24h": 6.8,
+  "warnings": [
+    {"level": "YELLOW", "type": "thunderstorm with lightning and gusty winds", "validFrom": "2026-07-21T06:00:00+05:30", "validTo": "2026-07-22T20:00:00+05:30"}
+  ],
+  "nowcast": null,
+  "agrometAdvisoryShape": "(shape) Light to moderate rainfall likely; postpone irrigation where rain is expected; ensure field drainage; monitor moisture-sensitive disease development after humid spells.",
+  "attribution": "Source: India Meteorological Department, Ministry of Earth Sciences, Government of India"
+}

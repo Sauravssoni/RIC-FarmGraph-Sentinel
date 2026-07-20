@@ -23,6 +23,7 @@ from .persistence import SQLStore, default_store
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = REPO_ROOT / "data" / "demo"
 REF_DIR = REPO_ROOT / "data" / "reference"
+POLICY_DIR = REPO_ROOT / "data" / "policy"
 
 CLOSED_STATES = {"RESOLVED", "CLOSED_UNKNOWN", "CLOSED_DUPLICATE"}
 VERIFIED_STATES = {"EXPERT_CONFIRMED", "EXPERT_CORRECTED", "FIELD_VISIT_REQUIRED", "ADVISORY_ISSUED", "FOLLOW_UP_DUE", "IMPROVING", "NOT_IMPROVING"}
@@ -46,6 +47,8 @@ class DemoRepository:
         self._seed = _load("seed.json")
         self.kvks = _load_ref("kvk-directory.json")["kvks"]
         self.public_data_snapshot = _load_ref("public-data-snapshot.json")
+        self.weather_policy = json.loads((POLICY_DIR / "weather-risk.json").read_text(encoding="utf-8"))
+        self._imd_adapter: Any = None
         self.store: Optional[SQLStore] = (
             None if os.environ.get("FGR_PERSIST") == "memory" else default_store()
         )
@@ -556,6 +559,32 @@ class DemoRepository:
                 "regional": regional, "regionalReviewRequired": regional,
                 "at": at, "provenance": "SIMULATED",
             }
+
+    # ---------------- IMD government weather (Task 003 Phase 2C) ----------------
+    def weather_for_district(self, district: str) -> dict[str, Any]:
+        from .imd import ImdAdapter  # local import keeps module reload order simple
+        with self._lock:
+            if self._imd_adapter is None:
+                om = self.public_data_snapshot.get("sources", {}).get("open_meteo_jodhpur")
+                self._imd_adapter = ImdAdapter(open_meteo_snapshot=om)
+            return self._imd_adapter.district_weather(district)
+
+    def cluster_weather_context(self, cluster_id: str) -> dict[str, Any]:
+        from .imd import weather_suitability_explanation
+        cl = self.clusters.get(cluster_id)
+        if cl is None:
+            raise AdvisoryRejected("CLUSTER_NOT_FOUND", f"Cluster {cluster_id} not found")
+        member = next((c for c in self.cases_list() if c["id"] in cl.get("memberCaseIds", [])), None)
+        district = (member or {}).get("district", "Jodhpur")
+        weather = self.weather_for_district(district)
+        explanation = weather_suitability_explanation(
+            cl, weather.get("weather"), weather["state"],
+            self.weather_policy, self.engine.policy["outbreak"]["weights"]["weatherSuitability"])
+        return {
+            "clusterId": cluster_id, "district": district,
+            "weather": weather, "weatherComponent": explanation,
+            "provenance": "Explainable weather component — conservative generic associations only (data/policy/weather-risk.json)",
+        }
 
     # ---------------- learning flywheel (Phase F server side) ----------------
     def learning_summary(self) -> dict[str, Any]:
