@@ -10,7 +10,7 @@
  */
 import type { CaptureChecklist, Case, FieldMission, IntegrationAdapterStatus, OverviewKpis, Referral } from "@contracts";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type DemoRole = "farmer" | "field_worker" | "expert" | "officer" | "admin";
 

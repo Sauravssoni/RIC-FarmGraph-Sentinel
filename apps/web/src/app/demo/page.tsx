@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getStore, useDemoStore } from "@/lib/store";
 import { apiDemoReset } from "@/lib/httpProvider";
 import { DemoBanner } from "@/components/bits";
+import NegativePath from "@/components/NegativePath";
 
 const GOLDEN = "C-2614";
 const CLUSTER = "CL-2601";
@@ -90,6 +91,7 @@ const STEPS: Step[] = [
 
 export default function DemoController() {
   const store = getStore();
+  const [mode, setMode] = useState<"golden" | "negative">("golden");
   const [step, setStep] = useState(0);
   const [log, setLog] = useState<string[]>([]);
   const golden = useDemoStore((s) => s.getState().cases.find((c) => c.id === GOLDEN));
@@ -203,6 +205,21 @@ export default function DemoController() {
       </div>
       <div className="mt-3"><DemoBanner /></div>
 
+      {/* Judge mode tabs: golden path vs adversarial negative path */}
+      <div className="mt-4 flex gap-2" role="tablist" aria-label="Demo mode">
+        <button type="button" role="tab" aria-selected={mode === "golden"} onClick={() => setMode("golden")}
+          className={`btn-secondary !min-h-[40px] text-sm ${mode === "golden" ? "!bg-ink-900 !text-sand-50" : ""}`}>
+          ① Golden path (12 steps)
+        </button>
+        <button type="button" role="tab" aria-selected={mode === "negative"} onClick={() => setMode("negative")}
+          className={`btn-secondary !min-h-[40px] text-sm ${mode === "negative" ? "!bg-ink-900 !text-sand-50" : ""}`}>
+          ② Negative path (adversarial)
+        </button>
+      </div>
+
+      {mode === "negative" && <NegativePath />}
+
+      {mode === "golden" && (<>
       <div className="mt-4 h-2.5 rounded-full bg-sand-200" role="progressbar" aria-valuenow={completedCount} aria-valuemax={STEPS.length} aria-label="Demo progress">
         <div className="h-2.5 rounded-full bg-leaf-600 transition-all" style={{ width: `${(completedCount / STEPS.length) * 100}%` }} />
       </div>
@@ -260,6 +277,7 @@ export default function DemoController() {
           <ul className="mt-1 list-disc pl-5 text-sm text-ink-700">{log.map((l, i) => <li key={i}>{l}</li>)}</ul>
         </section>
       )}
+      </>)}
     </div>
   );
 }
