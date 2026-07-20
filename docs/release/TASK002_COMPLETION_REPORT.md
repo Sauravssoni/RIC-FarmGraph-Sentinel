@@ -38,11 +38,12 @@
 | 17 | Deployment | ✅ | docker-compose, API+web Dockerfiles, GH Pages workflow (basePath-aware), render.yaml, `infra/DEPLOY.md` — nothing claimed live that isn't |
 | 18 | CI | ✅ | web + api + **Playwright e2e job** + advisory security scans (npm audit, pip-audit, gitleaks — labelled report-first) |
 | 19 | Evidence docs | ✅ | MODEL_CARD, DATA_CARD, EVALUATOR_GUIDE, LIVE_DEMO, RESPONSIBLE_AI |
-| 20 | Branch, commits, PR | ⚠️ | Branch + 13 workstream commits done; **push/PR blocked: the earlier PAT returns 401 (rotated/revoked). `git bundle` + PR body included.** |
+| 20 | Branch, commits, PR | ✅ | `kimi/farmgraph-winning-release` pushed; **PR #1 open** → https://github.com/Sauravssoni/RIC-FarmGraph-Sentinel/pull/1 (body: `docs/release/PR_BODY.md`) |
 
 ## Commit log (this branch)
 
 ```
+9d0e33e Release: Task 002 completion report + PR body
 c025e44 Bundle MobileNetV2-7 ONNX + non-threaded wasm — real EDGE_MODEL screening
 e45becd Phase N: evidence package — MODEL_CARD, DATA_CARD, EVALUATOR_GUIDE, LIVE_DEMO, RESPONSIBLE_AI
 f3bd4e7 Phase M: CI upgrade — Playwright e2e job, advisory security scans
@@ -60,7 +61,6 @@ c73abb2 Phase C: Farm Digital Twin + simulator
 
 ## Honest residual gaps
 
-1. **Push/PR pending** — needs a fresh fine-grained PAT (Contents + Workflows RW). Everything is committed locally; `docs/release/farmgraph-winning-release.bundle` carries the full branch.
-2. pixfeat remains a heuristic (no labelled field dataset exists) — stated everywhere; the lifecycle registry marks the future trained model CANDIDATE.
-3. `data.gov.in` live fetch needs a free API key (documented; not fabricated).
-4. Security scans in CI are report-first (`continue-on-error`) until a scheduled dependency-bump cycle — labelled in the workflow.
+1. pixfeat remains a heuristic (no labelled field dataset exists) — stated everywhere; the lifecycle registry marks the future trained model CANDIDATE.
+2. `data.gov.in` live fetch needs a free API key (documented; not fabricated).
+3. Security scans in CI are report-first (`continue-on-error`) until a scheduled dependency-bump cycle — labelled in the workflow.
