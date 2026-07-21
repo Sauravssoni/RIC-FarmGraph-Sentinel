@@ -34,7 +34,7 @@ def _upload(client: TestClient, kind: str, content: bytes, content_type: str, co
 
 def _handoff_body(image: dict, voice: dict, consent_ref: str) -> dict:
     return {
-        "idempotencyKey": "task004-connected-chain-001",
+        "idempotencyKey": f"task004-connected-chain-{consent_ref}",
         "case": {
             "farmerId": "RJ-DEMO-F1042",
             "plotId": "RJ-DEMO-PLOT-118",
@@ -49,7 +49,7 @@ def _handoff_body(image: dict, voice: dict, consent_ref: str) -> dict:
             "createdOffline": True,
             "consent": {"given": True, "channel": "typed", "ref": consent_ref},
             "observation": {
-                "symptomCategory": "white_growth",
+                "symptomCategory": "white_downy_growth",
                 "symptomNote": "पत्ते के नीचे सफेद परत दिखाई दे रही है",
                 "checklist": {"leafClose": True, "lowerLeaf": True, "wholePlant": True, "lightingOk": True},
                 "imageHashes": [image["sha256"]],
