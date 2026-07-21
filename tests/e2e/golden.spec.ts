@@ -1,16 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 
 /**
- * Golden-path e2e: drives the deterministic /demo controller through the full
- * loop and verifies the surfaces judges touch. Numbers are exact because the
- * demo is deterministic.
+ * Golden-path e2e: drives the simplified five-act evaluator proof through the
+ * complete deterministic loop and verifies the surfaces judges touch.
  */
 
-const stepPill = (page: Page, index1Based: number) =>
-  page.locator('ol[aria-label="Steps"] button').nth(index1Based - 1);
+const actButton = (page: Page, index1Based: number) =>
+  page.locator('ol[aria-label="Demo acts"] button').nth(index1Based - 1);
 
-async function runAction(page: Page, stepIndex1Based: number) {
-  await stepPill(page, stepIndex1Based).click();
+async function runAction(page: Page, actIndex1Based: number) {
+  await actButton(page, actIndex1Based).click();
   await page.locator("button.btn-green").click();
 }
 
@@ -24,52 +23,43 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
-test("golden loop via guided demo controller (deterministic)", async ({ page }) => {
-  // pristine seed: golden case is an offline DRAFT, cluster 65.5 SUSPECTED
-  await expect(page.getByText("Guided demonstration")).toBeVisible();
+test("golden loop via five-act evaluator proof (deterministic)", async ({ page }) => {
+  await expect(page.getByText("The complete proof in five acts.")).toBeVisible();
   expect(await liveState(page)).toContain("DRAFT");
   expect(await liveState(page)).toContain("65.5");
   expect(await liveState(page)).toContain("SUSPECTED");
 
-  await runAction(page, 3); // first capture fails quality gate
-  expect(await liveState(page)).toContain("NEEDS_RECAPTURE");
-
-  await runAction(page, 4); // guided recapture + sync
-  expect(await liveState(page)).toContain("READY_FOR_TRIAGE");
-
-  await runAction(page, 5); // deterministic triage
+  await runAction(page, 2); // reject poor capture, recapture, sync and triage
   expect(await liveState(page)).toContain("AWAITING_EXPERT");
   await expect(page.getByText(/downy_mildew 0\.62/)).toBeVisible();
   await expect(page.getByText(/nutrient_n 0\.27/)).toBeVisible();
 
-  await runAction(page, 7); // expert confirm
+  await runAction(page, 3); // expert confirms
   expect(await liveState(page)).toContain("EXPERT_CONFIRMED");
   expect(await liveState(page)).toContain("71.5");
   expect(await liveState(page)).toContain("VERIFIED");
 
-  await runAction(page, 9); // generate mission
+  await runAction(page, 4); // generate mission and issue advisory
   await expect(page.locator("section", { hasText: "Action log" })).toContainText(/Mission M-\d+/);
-
-  await runAction(page, 10); // issue approved advisory
   expect(await liveState(page)).toContain("ADVISORY_ISSUED");
 
-  await runAction(page, 11); // follow-up improving
+  await runAction(page, 5); // record improvement
   expect(await liveState(page)).toContain("IMPROVING");
 
-  await expect(page.getByText("12 of 12 steps complete")).toBeVisible();
+  await expect(page.getByText("5 of 5 proof acts complete")).toBeVisible();
 
-  // deterministic reset restores the pristine golden state
-  await page.getByRole("button", { name: /Reset demo/ }).click();
+  await page.getByRole("button", { name: /Reset proof/ }).click();
   expect(await liveState(page)).toContain("DRAFT");
   expect(await liveState(page)).toContain("65.5");
 });
 
-test("command centre renders KPIs, map and provenance", async ({ page }) => {
+test("command centre renders executive metrics, risk map and provenance", async ({ page }) => {
   await page.goto("command-centre/");
   await expect(page.getByText(/Simulated prototype dataset/).first()).toBeVisible();
-  await expect(page.getByText("Pilot geospatial view").first()).toBeVisible();
-  await expect(page.locator("svg").first()).toBeVisible(); // pilot geospatial view
+  await expect(page.getByText("Live operational geography").first()).toBeVisible();
+  await expect(page.locator("svg").first()).toBeVisible();
   await expect(page.getByText(/Natural Earth/).first()).toBeVisible();
+  await expect(page.getByText(/What needs action now/).first()).toBeVisible();
 });
 
 test("case detail shows timeline and advisory lock", async ({ page }) => {
