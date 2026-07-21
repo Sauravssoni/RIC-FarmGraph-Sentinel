@@ -11,12 +11,16 @@ import { defineConfig } from "@playwright/test";
  *    tests/e2e/prepare-subpath.mjs). Nothing is served at the domain root in
  *    this mode, so any root-absolute asset regression fails loudly.
  * Specs navigate with relative paths so the same suite runs in both modes.
+ *
+ * The Task 004 connected-release spec is deliberately excluded here because
+ * it starts and requires FastAPI; playwright.connected.config.ts owns it.
  */
 const SUBPATH = process.env.E2E_SUBPATH ?? ""; // e.g. "/RIC-FarmGraph-Sentinel"
 const SERVE_DIR = SUBPATH ? "." : "../../apps/web/out";
 
 export default defineConfig({
   testDir: ".",
+  testIgnore: /connected-release\.spec\.ts/,
   timeout: 45_000,
   retries: 0,
   workers: 1,
@@ -25,8 +29,6 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:4173${SUBPATH}/`,
     headless: true,
     launchOptions: {
-      // Local sandboxes use system Chromium via CHROMIUM_PATH (or the common
-      // /usr/bin/chromium); CI uses the Playwright-downloaded browser.
       ...(process.env.PLAYWRIGHT_NO_EXECUTABLE_PATH
         ? {}
         : { executablePath: process.env.CHROMIUM_PATH || "/usr/bin/chromium" }),
