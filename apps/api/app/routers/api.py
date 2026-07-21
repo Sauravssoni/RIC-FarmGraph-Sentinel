@@ -496,3 +496,18 @@ def outbreak_weather_context(request: Request, cluster_id: str) -> dict[str, Any
         return repo(request).cluster_weather_context(cluster_id)
     except AdvisoryRejected as exc:
         raise HTTPException(status_code=404, detail={"code": exc.code, "detail": exc.detail}) from exc
+
+
+# ---------------------------------------------------------------------------
+# AGMARKNET mandi prices (Task 003 Phase 2D) — data.gov.in, Rajasthan only,
+# four pilot crops with commodity aliases. Exact states; SAMPLE-labelled when
+# no key is configured.
+# ---------------------------------------------------------------------------
+
+@router.get("/integrations/mandi")
+def integration_mandi(request: Request, crop: str = Query(default="bajra"),
+                      district: Optional[str] = Query(default=None)) -> dict[str, Any]:
+    """Normalised mandi quotes for a pilot crop (Rajasthan): mandi, district,
+    variety, arrival date, min/modal/max price, unit, source, fetched time,
+    cache age, market type, integration state."""
+    return repo(request).mandi_for_crop(crop, district)

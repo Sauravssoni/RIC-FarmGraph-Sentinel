@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "provenance": "SAMPLE SHAPE — AWAITING FIRST KEYED CAPTURE. Field shapes per the documented data.gov.in AGMARKNET current-daily-mandi-price resource (state/district/market/commodity/variety/arrival_date/min_price/max_price/modal_price). NOT an official capture — never labelled CACHED_MANDI_DATA. Activation: set DATAGOV_API_KEY (free from data.gov.in) on the API host.",
+    "shapedOn": "2026-07-21",
+    "officialFormatReference": "data.gov.in AGMARKNET resource (api.data.gov.in/resource/…, format=json)"
+  },
+  "records": [
+    {"state": "Rajasthan", "district": "Jodhpur", "market": "Jodhpur (Grain)", "commodity": "Bajra(Pearl Millet/Cumbu)", "variety": "FAQ", "arrival_date": "20/07/2026", "min_price": "2350", "max_price": "2580", "modal_price": "2460"},
+    {"state": "Rajasthan", "district": "Nagaur", "market": "Nagaur (Grain)", "commodity": "Bajra(Pearl Millet/Cumbu)", "variety": "FAQ", "arrival_date": "20/07/2026", "min_price": "2280", "max_price": "2510", "modal_price": "2405"},
+    {"state": "Rajasthan", "district": "Jodhpur", "market": "Jodhpur (Grain)", "commodity": "Mustard", "variety": "FAQ", "arrival_date": "20/07/2026", "min_price": "5100", "max_price": "5450", "modal_price": "5280"},
+    {"state": "Rajasthan", "district": "Nagaur", "market": "Merta", "commodity": "Guar", "variety": "FAQ", "arrival_date": "20/07/2026", "min_price": "4900", "max_price": "5350", "modal_price": "5120"},
+    {"state": "Rajasthan", "district": "Jalore", "market": "Bhinmal", "commodity": "Cumin", "variety": "FAQ", "arrival_date": "20/07/2026", "min_price": "24100", "max_price": "26800", "modal_price": "25450"},
+    {"state": "Rajasthan", "district": "Nagaur", "market": "Nagaur (Spices)", "commodity": "Cumin", "variety": "FAQ", "arrival_date": "20/07/2026", "min_price": "23800", "max_price": "26500", "modal_price": "25100"}
+  ]
+}

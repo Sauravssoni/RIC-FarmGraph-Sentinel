@@ -560,6 +560,14 @@ class DemoRepository:
                 "at": at, "provenance": "SIMULATED",
             }
 
+    # ---------------- AGMARKNET mandi prices (Task 003 Phase 2D) ----------------
+    def mandi_for_crop(self, crop: str, district: Optional[str] = None) -> dict[str, Any]:
+        from .agmarknet import AgmarknetAdapter  # local import keeps reload order simple
+        with self._lock:
+            if getattr(self, "_agmarknet_adapter", None) is None:
+                self._agmarknet_adapter = AgmarknetAdapter()
+            return self._agmarknet_adapter.mandi_prices(crop, district)
+
     # ---------------- IMD government weather (Task 003 Phase 2C) ----------------
     def weather_for_district(self, district: str) -> dict[str, Any]:
         from .imd import ImdAdapter  # local import keeps module reload order simple
