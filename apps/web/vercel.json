@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm config set registry https://registry.npmjs.org/ && npm install --global npm@10.8.2 --no-audit --no-fund && cd ../.. && npm config set registry https://registry.npmjs.org/ && npm config set replace-registry-host always && npm install --workspaces --include-workspace-root --no-audit --no-fund --prefer-online",
+  "installCommand": "bash scripts/vercel-install.sh",
   "buildCommand": "cd ../.. && npm run build --workspace apps/web",
   "outputDirectory": "out",
   "cleanUrls": true,
