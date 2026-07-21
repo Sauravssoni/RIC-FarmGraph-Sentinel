@@ -1,149 +1,107 @@
-# FarmGraph Rakshak — Two-Minute Evaluator Demo Script
+# FarmGraph Rakshak — Two-Minute Evaluator Demo
 
-## Presenter objective
+## Presenter rule
 
-Demonstrate the outcome and operational system first. Government-integration readiness and technical honesty support the story; they do not dominate it.
+Tell one operational story. Do not tour every page. Use the five proof acts in `/demo/`, and open a deeper screen only when it strengthens the current act.
 
-## 0:00–0:12 — Rajasthan Command Centre
+## 0:00–0:20 — Act 1: See the operational picture
 
 **On screen:** `/command-centre/`
 
 **Say:**
 
-“FarmGraph Rakshak is Rajasthan’s offline crop-health and outbreak-response grid. Instead of stopping at an image label, it connects field evidence, expert and KVK verification, Farm Digital Twins, outbreak intelligence, safe advisories and measurable follow-up.”
-
-Show:
-
-- active cases;
-- suspected/verified clusters;
-- expert queue;
-- mission and sync status;
-- Rajasthan pilot map.
-
-## 0:12–0:30 — Offline field evidence
-
-**On screen:** `/field/scan/` or Judge Mode golden path.
-
-**Say:**
-
-“A field worker can report from a low-connectivity village. The application stores the draft, photographs and voice note on the device. It checks the actual pixels for blur, exposure, contrast and vegetation coverage before any screening.”
-
-Demonstrate:
-
-- simulated offline mode;
-- one poor image rejected;
-- clear recapture instruction;
-- a usable image accepted.
-
-## 0:30–0:43 — Honest edge intelligence
-
-**Say:**
-
-“The prototype runs real browser image processing and a replaceable edge provider. Every provider, version, uncertainty and abstention is visible. The current crop-pattern scorer is a research heuristic—not a claimed field-accuracy model—and consequential cases always route to an expert.”
-
-Show:
-
-- provider badge;
-- candidate pattern;
-- uncertainty;
-- expert-verification-required message.
-
-## 0:43–0:56 — Voice and connected evidence proof
-
-**On screen:** `/release-proof/`
-
-**Say:**
-
-“Hindi voice evidence can be recorded offline. When Bhashini credentials are available, the backend can request Hindi transcription; otherwise the recording remains safe and a human confirms the transcript. This connected proof preserves the exact image hash, pixel-quality result, edge provider, voice hash and transcript confirmation through FastAPI.”
-
-Show:
-
-- real voice note;
-- consent;
-- connected handoff result.
-
-## 0:56–1:12 — KVK referral
-
-**Say:**
-
-“The case is matched to the nearest sourced KVK, with crop speciality, call, email and directions. The referral has a guarded lifecycle, a 48-hour SLA and a privacy-masked evidence pack. We do not falsely claim automated delivery.”
-
-Show:
-
-- nearest KVK;
-- referral ID/SLA;
-- downloadable `kvk-referral-pack/v2`.
-
-## 1:12–1:28 — Farm Digital Twin and outbreak intelligence
-
-**On screen:** `/digital-twins/RJ-DEMO-PLOT-118/`
-
-**Say:**
-
-“Every plot becomes a Farm Digital Twin carrying crop stage, evidence, expert decisions, KVK support, weather/market context, advisories and outcomes. When compatible verified cases appear nearby, the explainable cluster score changes and officers can generate a representative field mission.”
-
-Show:
-
-- Twin timeline;
-- government-data rail;
-- cluster relationship;
-- before/after score;
-- mission action.
-
-## 1:28–1:42 — Safety and learning
-
-**Say:**
-
-“Only approved, valid, crop- and condition-matched advisories can be issued. Chemical content is locked. Every expert confirmation or correction becomes a governed learning record, but no model retrains or promotes itself automatically.”
-
-Show:
-
-- approved advisory;
-- chemical lock;
-- learning record/model lifecycle.
-
-## 1:42–1:54 — Government interoperability
-
-**On screen:** `/integrations/`
-
-**Say:**
-
-“FarmGraph complements Raj Kisan, AgriStack, NPSS, IMD, Bhashini and Soil Health Card. Every connector is labelled live, cached, public-directory, credentials-required or awaiting authority. No integration is fabricated.”
+“FarmGraph Rakshak is Rajasthan’s offline crop-health and outbreak-response grid. This first screen answers one question: where should the next response happen, and why?”
 
 Show only:
 
-- Bhashini state;
-- IMD state;
-- AGMARKNET state;
-- KVK public directory;
-- Raj Kisan/AgriStack awaiting-authority contracts.
+- the Rajasthan pilot map;
+- four decision metrics;
+- the highest-priority case;
+- the selected outbreak cluster;
+- expert, mission, sync and KVK delivery state.
 
-## 1:54–2:00 — Close
+## 0:20–0:45 — Act 2: Prove evidence quality before AI
 
-**Return to Command Centre.**
+**On screen:** `/demo/`, Act 2.
+
+Click **Run evidence-quality proof**.
 
 **Say:**
 
-“The edge model detects the first signal. FarmGraph Rakshak is the operating system that helps Rajasthan verify it, contain the outbreak and learn safely from every field.”
+“A weak image is rejected before any diagnosis. The farmer receives precise recapture guidance, the report survives offline, sync is explicit and the usable evidence routes through an uncertainty-aware edge provider.”
 
-## Backup path
+Point to:
 
-When the API or external services are unavailable:
+- rejected poor capture;
+- guided recapture;
+- offline-to-connected state;
+- candidate labels and uncertainty;
+- `AWAITING_EXPERT`.
 
-- use the standalone deterministic Judge Mode;
-- show exact degraded state labels;
-- use bundled government evidence/sample contracts;
-- do not pause the story to troubleshoot credentials;
-- finish with the KVK, Twin, outbreak and safety flow.
+## 0:45–1:05 — Act 3: Put the expert in control
 
-## Claims to avoid
+Click **Record expert verification**.
 
-Never say:
+**Say:**
+
+“Consequential action remains expert-controlled. The reviewer can confirm, correct, request recapture, mark unknown or require a field visit. This confirmation also strengthens the nearby outbreak signal.”
+
+Point to:
+
+- structured expert decision;
+- case state change;
+- cluster score and status change;
+- audit continuity.
+
+## 1:05–1:30 — Act 4: Coordinate the field response
+
+Click **Launch field response**.
+
+**Say:**
+
+“FarmGraph turns verified signals into an operational response. It creates a representative field mission, routes the case toward the nearest sourced KVK and issues only the approved, versioned non-chemical advisory.”
+
+Point to:
+
+- generated mission ID and route;
+- KVK support path;
+- advisory version;
+- chemical section remaining locked.
+
+## 1:30–1:50 — Act 5: Close the loop and learn safely
+
+Click **Record measured outcome**.
+
+**Say:**
+
+“Five days later, the outcome is recorded. Improvement or non-improvement changes the operational state, and every expert decision becomes governed learning evidence without automatic retraining.”
+
+Point to:
+
+- `IMPROVING` state;
+- follow-up count;
+- audit log;
+- learning/governance link.
+
+## 1:50–2:00 — Close
+
+**Say:**
+
+“An image model can detect a signal. FarmGraph Rakshak is the operating system that helps Rajasthan verify it, coordinate the response and learn safely from every field.”
+
+## Optional backup proof
+
+Use only if asked:
+
+- **Stress tests:** poor images, duplicates, corrupt files, unsupported crop patterns and server guard degradation.
+- **Government infrastructure:** IMD, Bhashini, AGMARKNET, KVK and authority-gated integrations with explicit state labels.
+- **Connected evidence proof:** image hash, voice hash, transcript confirmation, FastAPI case and KVK referral pack.
+
+## Claims never to make
 
 - “100% accurate”;
-- “production deployed across Rajasthan”;
-- “live Raj Kisan/AgriStack integration”;
+- “trained Rajasthan disease model” for the current heuristic;
+- “live Raj Kisan/AgriStack integration” without authority;
 - “Marwari/Mewari ASR”;
-- “IMD live” when the state is whitelist-required;
-- “KVK received the referral” unless actual delivery is verified;
-- “trained Rajasthan disease model” for the current heuristic.
+- “KVK received the referral” when only a pack was generated;
+- “production deployed across Rajasthan.”
