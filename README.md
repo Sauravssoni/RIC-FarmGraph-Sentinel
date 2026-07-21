@@ -1,144 +1,193 @@
-# FarmGraph Rakshak — Offline Crop Health & Outbreak Intelligence Grid for Rajasthan
+# FarmGraph Rakshak
 
-[![quality-gates](https://github.com/Sauravssoni/RIC-FarmGraph-Sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/Sauravssoni/RIC-FarmGraph-Sentinel/actions/workflows/ci.yml)
+## Rajasthan’s Offline Crop-Health and Outbreak-Response Grid
 
 > **Every field seen. Every outbreak contained.**
-> Task 001 prototype for the Rajasthan innovation challenge *“AI-Based Crop Disease & Pest Detection for Smallholder Farmers”* — Syntheon Technology Pvt Ltd (DPIIT DIPP213187).
 
-![Command centre](docs/screenshots/command-centre-1440.png)
+FarmGraph Rakshak is a government-grade working prototype for the Rajasthan Innovation Challenge problem **“AI-Based Crop Disease & Pest Detection for Smallholder Farmers.”** It connects offline field evidence, image-quality controls, honest edge screening, expert verification, Farm Digital Twins, outbreak intelligence, KVK referrals, governed advisories and auditable follow-up.
 
-## Grounded in public government research, data and infrastructure
+**Applicant:** Syntheon Technology Private Limited  
+**DPIIT recognition:** DIPP213187  
+**Release branch:** `kimi/farmgraph-winning-release`  
+**Final-release PR:** [#1](https://github.com/Sauravssoni/RIC-FarmGraph-Sentinel/pull/1)
 
-Material design choices trace to verifiable public sources — full register in **[docs/research-evidence.md](docs/research-evidence.md)** (machine-readable: `data/reference/research-evidence.json`, also rendered in-app on `/governance`):
+## Evaluator entry points
 
-- **IMD station normals (Jodhpur 42339)** — 370.2 mm annual rainfall, ~63% in Jul–Aug → the outbreak weather-suitability rationale and the kharif demo calendar. ([IMD](https://mausam.imd.gov.in/jaipur/mcdata/extreme_jodhpur.pdf))
-- **ICAR-AICPMIP + ICRISAT pearl-millet downy-mildew research** → the golden advisory's cultural steps (rogue & bury/burn) and the high-spread-risk escalation policy. ([AICPMIP](http://www.aicpmip.res.in/pathogolical.html), [ICRISAT](https://oar.icrisat.org/9411/1/Downy%20mildew%20of%20pearl%20millet%20and%20its%20management.pdf))
-- **data.gov.in (OGD Platform, NIC)** — 100k+ datasets via free API key → the concrete, no-MoU path for AGMARKNET market context. ([data.gov.in](https://www.data.gov.in/))
-- **Bhashini/ULCA (MeitY)** — published ASR/NMT/TTS pipeline APIs → the voice-adapter contract; Marwari/Mewari dialect ASR is honestly flagged as research-stage. ([API docs](https://bhashini.gitbook.io/bhashini-apis))
-- **Natural Earth** public-domain boundaries → the licence-clean map. ([naturalearthdata.com](https://www.naturalearthdata.com/))
+| Experience | Route | Purpose |
+|---|---|---|
+| Government Command Centre | `/command-centre/` | Operational morning view, cases, outbreaks, missions and SLA signals |
+| Judge Mode | `/demo/` | Deterministic golden path, adversarial checks and government-infrastructure assurance |
+| Connected Evidence Proof | `/release-proof/` | Real image + voice evidence through FastAPI into a KVK referral pack |
+| Farm Digital Twins | `/digital-twins/` | Plot-level crop, evidence, risk, referral and government-data context |
+| KVK Support | `/support/` | Sourced directory, nearest-KVK matching, SLA lifecycle and evidence packs |
+| Integrations Operations | `/integrations/` | Live/cached/credential/authority states for public and government services |
 
-No adapter is live; every status is labelled. The rule: *if a design element can't be traced to the register, the challenge brief, or a labelled assumption, it doesn't ship.*
+## What is genuinely implemented
 
-FarmGraph Rakshak is a **government-credible prototype** of an offline-first crop-health grid: field workers capture structured evidence on low-end Android devices, a **deterministic, explainable triage layer** (clearly labelled *simulated*) routes cases to human experts, experts confirm or correct, district officers see outbreak clusters strengthen in near-real-time, field missions verify representative farms, and only **approved, versioned advisories** ever reach a farmer — with chemical recommendations **locked by policy**.
+### Field evidence and offline operation
 
-## What this prototype proves (and what it does not)
+- Mobile camera/upload workflow with JPEG, PNG and WebP validation.
+- Client-side downscale and JPEG re-encode, stripping EXIF/GPS metadata.
+- SHA-256 hashing, duplicate detection, IndexedDB persistence and deletion.
+- Measurable image-quality checks: resolution, blur, exposure, contrast, glare, shadow and vegetation coverage.
+- Explicit recapture instructions rather than forcing a diagnosis from unusable evidence.
+- Offline draft and outbox behaviour with idempotent connected sync.
+- Real voice-note recording, playback and on-device retention.
 
-**Proves**
-- The full operational loop works end-to-end and offline-first: capture → quality gate → recapture → triage → expert review → outbreak scoring → mission → advisory → follow-up → outcome → audit.
-- **Real pixel processing**: every photo passes a genuine pixel-quality engine (blur/brightness/contrast/exposure/green-coverage) and an interpretable pixel-feature scorer with published weights, uncertainty and abstention — provider-labelled `EDGE_HEURISTIC`, with `DETERMINISTIC_FALLBACK` as the safety net and an optional `EDGE_MODEL` (MobileNetV2 ONNX) drop-in for OOD screening.
-- **Real image pipeline**: type/size validation, downscale, EXIF strip by re-encoding, SHA-256 content hashing, duplicate detection, IndexedDB evidence store with deletion.
-- **Authoritative demo backend**: SQLite persistence that survives restarts, idempotent sync, referrals, learning records, advisory safety invariants (7 rejection codes), demo RBAC + security headers + rate limiting.
-- Farm Digital Twins with a transparent, compute-only scenario simulator; sourced KVK directory with referral routing; voice notes/dictation/TTS; a learning flywheel with no auto-training; live-fetched public data served CACHED.
-- Every screen carries provenance; no number on any screen claims measured model accuracy.
-- Government integration reality is represented truthfully: 17 adapters, **none live**, each with status, contract shape, consent basis and fallback.
+### Honest edge intelligence
 
-**Does not**
-- No trained crop-disease model ships. The pixel scorer is an interpretable heuristic (`pixfeat-v0`, weights published); its note states *"no accuracy has been measured"*. Triage-of-record scores remain **simulated by deterministic rules** and labelled `SIMULATED`.
-- No adapter is connected to any government system. Statuses are only `SIMULATED / CONTRACT_DEFINED / PUBLIC_DATA_ONLY / AWAITING_AUTHORITY / NOT_STARTED`; the public-data snapshot is served **CACHED** with its fetch timestamp.
-- No real farmer data exists anywhere in the repo. All farmers are pseudonymous demo records.
+- `pixfeat-v0.2.0`: an interpretable classical pixel-feature scorer with abstention and crop-support constraints.
+- Bundled MobileNetV2-7 ONNX inference in the browser for broad out-of-distribution/plant-material screening only.
+- Provider identity, model version, runtime, duration, uncertainty and abstention reasons on evidence records.
+- No score is called accuracy.
+- Expert confirmation remains mandatory for consequential action.
 
-## Quick start
+### Government operating workflow
+
+- 29 deterministic pilot cases and 29 Farm Digital Twins across Jodhpur, Nagaur and Jalore.
+- Explainable outbreak scoring, suspected/verified clusters and representative field missions.
+- Versioned advisory governance with server-side safety invariants and a locked chemical section.
+- Sourced KVK directory, nearest-distance and crop-speciality matching.
+- Connected referral creation, guarded seven-state lifecycle, SLA, call/email/directions actions and privacy-masked evidence packs.
+- Expert corrections create governed learning records; no automatic retraining is claimed.
+- Append-only case timelines and audit stream.
+
+### Government and public infrastructure
+
+- **Bhashini:** backend-only Hindi ASR/TTS PoC adapter. Without credentials, the UI shows `BHASHINI_CREDENTIALS_REQUIRED`; offline voice notes remain available. Marwari/Mewari ASR is not claimed and routes to human review.
+- **IMD:** official-adapter hierarchy with genuine IP-whitelist evidence, source attribution, cache/fallback states and explainable weather-score contribution. Sample data is never promoted as live IMD.
+- **data.gov.in / AGMARKNET:** Rajasthan commodity aliases and live/cached/key-required states for bajra, mustard, guar and cumin market context.
+- **AgriStack, UFSI, Raj Kisan, RajSSO, Jan Aadhaar, e-Dharti/ULPIN, Soil Health Card, NPSS, Rajasthan Sampark and e-Mitra:** versioned adapter contracts with consent, minimum fields, fallbacks and authority dependencies. They are not presented as live connections.
+
+## Task 004 connected evidence proof
+
+`/release-proof/` closes the last important continuity gap:
+
+```text
+consented image + real voice note
+→ SHA-256 evidence upload
+→ pixel-quality + edge-provider metadata
+→ human-confirmed transcript
+→ authoritative connected case
+→ nearest-KVK referral
+→ downloadable kvk-referral-pack/v2
+```
+
+The backend release API is under `/api/v1/release` and adds:
+
+- `GET /health`
+- `POST /evidence`
+- `POST /handoff`
+- `GET /cases/{case_id}`
+
+The handoff is idempotent and rejects missing/mismatched consent, unsupported evidence types and insufficient roles.
+
+## Important limitations
+
+- No trained Rajasthan crop-disease neural model is claimed. `pixfeat` is a transparent research heuristic with **no measured field accuracy**.
+- MobileNetV2 is an ImageNet OOD screener, not the disease classifier.
+- Farmer, plot, case and outcome records are synthetic demonstration data.
+- Government systems are labelled live only after a successful official operation.
+- KVK contact data comes from public institutional directories; external delivery is not automated.
+- Demo RBAC uses `X-Demo-Role`; production must use RajSSO/authority-managed identity.
+- SQLite/in-memory persistence is demonstration-grade, not production infrastructure.
+
+## Run locally
 
 ```bash
-# 1) install (npm workspaces — Node 20+, Python 3.12+)
-npm install
-python3 -m venv .venv && . .venv/bin/activate && pip install -r apps/api/requirements.txt
-
-# 2) regenerate the deterministic demo dataset (optional — seed.json is committed)
+npm ci
+pip install -r apps/api/requirements.txt
 python3 data/demo/generate_seed.py
 
-# 3a) frontend (static demo, no backend needed)
-npm run dev --workspace apps/web          # http://localhost:3000 → redirects to /command-centre
+# terminal 1
+uvicorn app.main:app --app-dir apps/api --host 127.0.0.1 --port 8000
 
-# 3b) backend API (optional; the web app auto-detects it and shows api-connected)
-uvicorn app.main:app --app-dir apps/api --port 8000
-NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev --workspace apps/web
-
-# 4) Judge Mode — golden path (12 steps) + adversarial negative path (9 live checks)
-open http://localhost:3000/demo/
-
-# 5) one-command full stack (optional)
-docker compose up --build                 # web :3000 · api :8000 (SQLite demo persistence)
+# terminal 2
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000 npm run dev --workspace apps/web
 ```
 
-## Quality gates (exact commands)
+Open:
+
+- `http://127.0.0.1:3000/demo/`
+- `http://127.0.0.1:3000/release-proof/`
+- `http://127.0.0.1:8000/docs`
+
+One-command Docker demonstration:
 
 ```bash
-npm run typecheck --workspace apps/web     # tsc --noEmit — strict
-npm run lint --workspace apps/web          # eslint --max-warnings 0
-npm run test --workspace apps/web          # vitest run — 52 tests
-cd apps/api && python3 -m pytest tests/ -q # 33 tests (invariants, RBAC, sync, persistence)
-npm run build --workspace apps/web         # next build — static export to apps/web/out
-npm run e2e                                # Playwright — 14 tests (golden + negative path + responsive)
+docker compose up --build
 ```
 
-## Repository layout
+## Quality gates
 
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run test:api
+npm run build
+npm run e2e
+npm run e2e:connected
+npm run e2e:subpath
 ```
-apps/web            Next.js 15 (App Router, TS strict, Tailwind, PWA, static export)
-apps/api            FastAPI + pydantic v2 — deterministic demo provider, 18 endpoints
-packages/contracts  Shared TypeScript domain contracts (single type source)
-data/demo           policy.json · taxonomy.json · integrations.json · generate_seed.py → seed.json
-data/geo            Rajasthan outline (Natural Earth 10m, public domain) + provenance
-docs                14 design/governance documents (see docs/)
-infra               deployment notes & environment template
-tests/e2e           Playwright golden-path + responsive checks
+
+Recorded pre-Task-004 local baseline from the release branch:
+
+- 86 Vitest tests passed.
+- 65 Pytest tests passed.
+- 15 standard Playwright tests passed.
+- 19 GitHub Pages subpath Playwright tests passed.
+- Strict TypeScript, ESLint and 73-page static export passed.
+
+Task 004 adds three API evidence-continuity tests and one browser-to-FastAPI connected E2E gate. GitHub Actions is currently prevented from starting jobs by an account-level billing lock; this is recorded as an external release blocker rather than represented as a code pass.
+
+## Deployment
+
+### Vercel frontend
+
+The Vercel project may use `apps/web` as its root. `apps/web/vercel.json` deliberately installs and builds from the monorepo root so workspace packages and `data/` remain available.
+
+### Render connected stack
+
+`render.yaml` defines:
+
+- `farmgraph-rakshak-api`
+- `farmgraph-rakshak-web`
+
+After creating the services:
+
+1. Set web `NEXT_PUBLIC_API_URL` to the API URL.
+2. Set API `FGR_ALLOWED_ORIGINS` to the exact frontend origin.
+3. Keep `FGR_PERSIST=memory` visibly labelled on free-tier hosting, or attach persistent infrastructure.
+4. Add Bhashini/data.gov.in/IMD values only through the API host’s secret manager.
+
+### GitHub Pages
+
+The Pages workflow builds with the repository base path. ONNX, WASM, manifest, service worker and offline caches are base-path-aware. Pages publishes only after merge to `main` and requires GitHub Actions to be unlocked.
+
+## Repository map
+
+```text
+apps/web                 Next.js 15 static-export PWA
+apps/api                 FastAPI connected demo backend
+packages/contracts       Shared TypeScript domain contracts
+data/demo                 Deterministic synthetic pilot dataset
+data/reference            KVK, government and public-data evidence artefacts
+data/models               Transparent research model configuration
+submission                Final application and evaluator package
+docs                      Architecture, safety, model, data and pilot evidence
+tests/e2e                 Static, subpath and connected Playwright gates
 ```
 
-## Personas (demo switcher — not authentication)
+## Core documentation
 
-Farmer · Field worker FW-07 · Expert (KVK persona) · District officer · State administrator. The switcher demonstrates role-appropriate views; it is **not** production authentication (that is RajSSO — adapter `AWAITING_AUTHORITY`).
+- [`docs/EVALUATOR_GUIDE.md`](docs/EVALUATOR_GUIDE.md)
+- [`docs/LIVE_DEMO.md`](docs/LIVE_DEMO.md)
+- [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)
+- [`docs/DATA_CARD.md`](docs/DATA_CARD.md)
+- [`docs/RESPONSIBLE_AI.md`](docs/RESPONSIBLE_AI.md)
+- [`docs/government-integration-matrix.md`](docs/government-integration-matrix.md)
+- [`docs/90-day-pilot.md`](docs/90-day-pilot.md)
+- [`docs/release/TASK004_STATUS.md`](docs/release/TASK004_STATUS.md)
 
-## The golden demo (deterministic)
-
-Farmer `RJ-DEMO-F1042`, plot `RJ-DEMO-PLOT-118`, Balesar (Jodhpur), bajra at vegetative stage, pale streaking. First capture **fails** the quality gate (no secondary view) → guided recapture passes → simulated triage scores **downy mildew 0.62 / nutrient stress 0.27 / unknown 0.11** → margin 0.35 < 0.40 so the case **cannot** auto-close and routes to expert → expert confirms → cluster **CL-2601 strengthens 65.5 → 71.5 and crosses SUSPECTED → VERIFIED** → representative field mission → approved advisory (chemical locked) → follow-up *improving* → outcome + audit events. `/demo` walks a presenter through all 12 steps with one-click actions and a deterministic reset.
-
-## Environment variables
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Optional API base; web app probes `/health` and falls back to the in-browser demo provider with a visible badge. |
-
-No secrets are required anywhere in Task 001.
-
-## Documentation
-
-| Doc | Contents |
-|---|---|
-| [docs/product-vision.md](docs/product-vision.md) | Problem framing, users, non-goals, why this wins |
-| [docs/problem-research.md](docs/problem-research.md) | Grounded problem research & design implications |
-| [docs/challenge-requirement-matrix.md](docs/challenge-requirement-matrix.md) | Every challenge requirement → where it is met |
-| [docs/architecture.md](docs/architecture.md) | System architecture, data flow, dual-engine design |
-| [docs/government-integration-matrix.md](docs/government-integration-matrix.md) | 17 adapters, statuses, contracts, fallbacks |
-| [docs/offline-sync-design.md](docs/offline-sync-design.md) | Offline-first architecture and sync semantics |
-| [docs/model-governance.md](docs/model-governance.md) | Model registry, abstention, thresholds, evaluation path |
-| [docs/advisory-safety.md](docs/advisory-safety.md) | Advisory lifecycle and the chemical lock |
-| [docs/data-provenance.md](docs/data-provenance.md) | Provenance labels, geo licensing, farmer privacy |
-| [docs/research-evidence.md](docs/research-evidence.md) | Public government research/data register with citations |
-| [docs/MODEL_CARD.md](docs/MODEL_CARD.md) | Inference stack card — pixfeat heuristic, ONNX screening, lifecycle |
-| [docs/DATA_CARD.md](docs/DATA_CARD.md) | Datasets, consent, privacy, retention, persistence |
-| [docs/EVALUATOR_GUIDE.md](docs/EVALUATOR_GUIDE.md) | 20-minute judge walkthrough + rubric map |
-| [docs/LIVE_DEMO.md](docs/LIVE_DEMO.md) | Runbook: static, docker, hosted, presenter script |
-| [docs/RESPONSIBLE_AI.md](docs/RESPONSIBLE_AI.md) | Truth rules, human-in-the-loop, safety, privacy |
-| [docs/threat-model.md](docs/threat-model.md) | Security & misuse threat model |
-| [docs/90-day-pilot.md](docs/90-day-pilot.md) | Phased 90-day pilot plan |
-| [docs/pilot-measurement-plan.md](docs/pilot-measurement-plan.md) | Metrics, baselines, instrumentation |
-| [docs/demo-script.md](docs/demo-script.md) | 12-step presenter script for judges |
-| [docs/known-limitations.md](docs/known-limitations.md) | Honest limitations and Task 002 scope |
-
-## Screenshots
-
-| Command centre (1440px) | Field scan (390px) |
-|---|---|
-| ![Command centre](docs/screenshots/command-centre-1440.png) | ![Field scan](docs/screenshots/field-scan-390.png) |
-| Outbreak intelligence | Guided demo controller |
-| ![Outbreaks](docs/screenshots/outbreaks-1440.png) | ![Demo](docs/screenshots/demo-1440.png) |
-
-## Reference links (public)
-
-- Natural Earth (public-domain geo data): https://www.naturalearthdata.com/
-- NPSS — National Pest Surveillance System: https://npss.dppqs.gov.in/
-- CIB&RC — Central Insecticides Board & Registration Committee: https://ppqs.gov.in/divisions/cib-rc
-- AgriStack: https://agristack.gov.in/ · Raj Kisan: https://rajkisan.rajasthan.gov.in/ · Bhashini: https://bhashini.gov.in/ · IMD: https://mausam.imd.gov.in/
-
-FarmGraph Rakshak is designed to **complement** NPSS / AgriStack / Raj Kisan — it contributes structured, expert-verified field evidence to them; it does not duplicate them.
+FarmGraph Rakshak is designed to complement Raj Kisan, AgriStack, NPSS, KVKs and Rajasthan’s existing service-delivery infrastructure—not replace them.
