@@ -14,7 +14,7 @@ async function runAction(page: Page, actIndex1Based: number) {
 }
 
 async function liveState(page: Page): Promise<string> {
-  return (await page.locator("section", { hasText: "Golden case live state" }).innerText()).replace(/\s+/g, " ");
+  return (await page.locator('section[aria-label="Golden case live state"]').innerText()).replace(/\s+/g, " ");
 }
 
 test.beforeEach(async ({ page }) => {
@@ -29,21 +29,21 @@ test("golden loop via five-act evaluator proof (deterministic)", async ({ page }
   expect(await liveState(page)).toContain("65.5");
   expect(await liveState(page)).toContain("SUSPECTED");
 
-  await runAction(page, 2); // reject poor capture, recapture, sync and triage
+  await runAction(page, 2);
   expect(await liveState(page)).toContain("AWAITING_EXPERT");
   await expect(page.getByText(/downy_mildew 0\.62/)).toBeVisible();
   await expect(page.getByText(/nutrient_n 0\.27/)).toBeVisible();
 
-  await runAction(page, 3); // expert confirms
+  await runAction(page, 3);
   expect(await liveState(page)).toContain("EXPERT_CONFIRMED");
   expect(await liveState(page)).toContain("71.5");
   expect(await liveState(page)).toContain("VERIFIED");
 
-  await runAction(page, 4); // generate mission and issue advisory
+  await runAction(page, 4);
   await expect(page.locator("section", { hasText: "Action log" })).toContainText(/Mission M-\d+/);
   expect(await liveState(page)).toContain("ADVISORY_ISSUED");
 
-  await runAction(page, 5); // record improvement
+  await runAction(page, 5);
   expect(await liveState(page)).toContain("IMPROVING");
 
   await expect(page.getByText("5 of 5 proof acts complete")).toBeVisible();
