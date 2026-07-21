@@ -36,7 +36,7 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: pip install -r apps/api/requirements.txt pytest
-      - name: API tests (in-memory persistence; conftest sets FGR_PERSIST=memory)
+      - name: API tests (including Task 004 evidence continuity)
         run: cd apps/api && python3 -m pytest tests/ -q
 
   e2e:
@@ -57,6 +57,30 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Playwright e2e (golden + negative path + responsive)
         run: npm run e2e
+        env:
+          PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
+
+  connected-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install web and API dependencies
+        run: |
+          npm ci
+          pip install -r apps/api/requirements.txt pytest
+      - name: Regenerate deterministic seed
+        run: python3 data/demo/generate_seed.py
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Browser → FastAPI → KVK pack evidence-continuity proof
+        run: npm run e2e:connected
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
 
@@ -82,10 +106,8 @@ jobs:
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
 
-  # Advisory dependency/secret scanning. Report-first (continue-on-error)
-  # until the next planned dependency-bump cycle; results are visible in the
-  # job log on every push. This is labelled deliberately — we do not claim a
-  # clean SBOM we have not yet remediated.
+  # Advisory dependency/secret scanning. Report-first until the final
+  # dependency remediation pass; results remain visible on every run.
   security-scan:
     runs-on: ubuntu-latest
     continue-on-error: true
