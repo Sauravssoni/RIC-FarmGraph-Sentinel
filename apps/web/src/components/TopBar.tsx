@@ -48,10 +48,10 @@ export function TopBar() {
 
   const apiBadge =
     app.apiMode === "api-connected"
-      ? { text: "API connected — demo provider active", cls: "bg-leaf-100 text-leaf-700 border-leaf-600/40" }
+      ? { text: "Connected demo backend", cls: "bg-leaf-100 text-leaf-700 border-leaf-600/40" }
       : app.apiMode === "api-fallback"
-        ? { text: "Demo provider (API unreachable)", cls: "bg-saffron-100 text-saffron-700 border-saffron-500/40" }
-        : { text: "Demo provider (browser)", cls: "bg-ink-800/10 text-ink-800 border-ink-800/20" };
+        ? { text: "Standalone demo — API unreachable", cls: "bg-saffron-100 text-saffron-700 border-saffron-500/40" }
+        : { text: "Standalone deterministic demo", cls: "bg-ink-800/10 text-ink-800 border-ink-800/20" };
 
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200 bg-sand-50/95 backdrop-blur no-print">
@@ -76,6 +76,19 @@ export function TopBar() {
                   </li>
                 );
               })}
+              <li>
+                <Link
+                  href="/release-proof"
+                  aria-current={pathname === "/release-proof" ? "page" : undefined}
+                  className={`block rounded-lg border px-2.5 py-2 whitespace-nowrap min-h-[40px] ${
+                    pathname === "/release-proof"
+                      ? "border-saffron-500 bg-saffron-500 text-ink-950"
+                      : "border-saffron-500/50 bg-saffron-50 text-saffron-700 hover:bg-saffron-100"
+                  }`}
+                >
+                  Connected proof
+                </Link>
+              </li>
             </ul>
           </nav>
           <div className="flex items-center gap-2 shrink-0">
