@@ -1,8 +1,8 @@
 {
   "name": "farmgraph-rakshak",
-  "version": "0.1.0",
+  "version": "0.4.0-rc1",
   "private": true,
-  "description": "FarmGraph Rakshak — Offline Crop Health & Outbreak Intelligence Grid for Rajasthan (Task 001 prototype)",
+  "description": "FarmGraph Rakshak — government-grade offline crop-health, Farm Digital Twin and outbreak-response prototype for Rajasthan",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -16,6 +16,7 @@
     "test": "npm run test --workspace apps/web",
     "test:api": "python3 -m pytest apps/api/tests -q",
     "e2e": "playwright test --config tests/e2e/playwright.config.ts",
+    "e2e:connected": "playwright test --config tests/e2e/playwright.connected.config.ts",
     "build:subpath": "NEXT_PUBLIC_BASE_PATH=/RIC-FarmGraph-Sentinel npm run build --workspace apps/web",
     "prepare:subpath": "node tests/e2e/prepare-subpath.mjs",
     "e2e:subpath": "npm run build:subpath && npm run prepare:subpath && E2E_SUBPATH=/RIC-FarmGraph-Sentinel playwright test --config tests/e2e/playwright.config.ts",
