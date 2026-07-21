@@ -11,8 +11,12 @@ import { useI18n } from "@/lib/i18n";
 import { captureQuality } from "@/lib/engine";
 import { CROPS, SYMPTOMS, SEED } from "@/lib/seed";
 import { clearDraft, enqueue, loadDraft, markAttempt, outboxItems, removeOutbox, saveDraft } from "@/lib/offline";
+import { apiHealthy, postSyncBatch } from "@/lib/httpProvider";
 import { DiagnosisPanel } from "@/components/DiagnosisPanel";
 import { StatusChip } from "@/components/bits";
+import CaptureStudio, { type CaptureBundle } from "@/components/CaptureStudio";
+import { VoiceNoteRecorder, HindiDictation, VoiceLanguageSelector, BhashiniPanel, type VoiceLanguage } from "@/components/VoiceTools";
+import type { VoiceNoteMeta } from "@/lib/voice";
 import type { CaptureChecklist, Case, DiagnosisResult } from "@contracts";
 
 const formSchema = z.object({
@@ -40,8 +44,9 @@ export default function FieldScan() {
   const [phase, setPhase] = useState<Phase>("consent");
   const [consent, setConsent] = useState(false);
   const [checklist, setChecklist] = useState<CaptureChecklist>({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false });
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [bundle, setBundle] = useState<CaptureBundle | null>(null);
+  const [voiceNote, setVoiceNote] = useState<VoiceNoteMeta | null>(null);
+  const [voiceLang, setVoiceLang] = useState<VoiceLanguage>("hi");
   const [done, setDone] = useState<{ c: Case; d: DiagnosisResult | null } | null>(null);
   const [resume, setResume] = useState(false);
   const [outboxN, setOutboxN] = useState(0);
@@ -105,9 +110,20 @@ export default function FieldScan() {
         createdOffline: offline, consentChannel: "typed",
       });
     }
-    store.addObservation(c.id, { symptomCategory: values.symptomCategory, symptomNote: values.symptomNote ?? "", checklist });
+    store.addObservation(c.id, {
+      symptomCategory: values.symptomCategory, symptomNote: values.symptomNote ?? "", checklist,
+      ...(bundle && bundle.imageIds.length > 0
+        ? {
+            imageIds: bundle.imageIds, imageHashes: bundle.imageHashes,
+            pixelQuality: bundle.pixelQuality,
+            ...(bundle.inference ? { edgeInference: bundle.inference as unknown as import("@contracts").EdgeInferenceRecord } : {}),
+          }
+        : {}),
+      ...(voiceNote ? { voiceNoteId: voiceNote.id } : {}),
+    });
     let d: DiagnosisResult | null = null;
-    if (quality.passed) d = store.triage(c.id) ?? null;
+    const pixelGateOk = !bundle || bundle.imageIds.length === 0 || bundle.pixelQuality.pass;
+    if (quality.passed && pixelGateOk) d = store.triage(c.id) ?? null;
     if (offline && !activeCaseId) {
       await enqueue({ kind: "case-report", payload: { caseId: c.id } });
       setOutboxN((n) => n + 1);
@@ -123,15 +139,44 @@ export default function FieldScan() {
     const items = await outboxItems();
     if (items.length === 0) { setSyncMsg("Outbox empty — nothing to sync."); return; }
     if (!app.effectiveOnline) { setSyncMsg("Still offline — reports stay safely on this device."); return; }
+    const apiUp = await apiHealthy();
+    let apiApplied = 0, apiReplayed = 0;
     for (const item of items) {
       const cid = (item.payload as { caseId?: string }).caseId;
-      if (cid) store.markSynced(cid);
+      if (!cid) { await removeOutbox(item.id!); continue; }
+      if (apiUp) {
+        // Real write to the demo API: idempotent — the same key never applies twice.
+        const c = store.getCase(cid);
+        if (c) {
+          try {
+            const res = await postSyncBatch(`scan-${cid}`, [{
+              farmerId: c.farmerId, plotId: c.plotId, crop: c.crop, cropStage: c.cropStage,
+              season: c.season, district: c.district, block: c.block, lat: c.lat, lon: c.lon,
+              areaAcres: c.areaAcres, consent: { given: c.consent.given, channel: c.consent.channel },
+              createdOffline: true,
+              observations: c.observations.map((o) => ({
+                symptomCategory: o.symptomCategory, symptomNote: o.symptomNote, checklist: o.checklist, at: o.at,
+              })),
+            }]);
+            if (res.status === "applied") apiApplied += 1; else apiReplayed += 1;
+          } catch (err) {
+            await markAttempt(item.id!, String(err));
+            setSyncMsg(`API sync failed for ${cid} — kept safely in outbox. ${err instanceof Error ? err.message : ""}`);
+            return;
+          }
+        }
+      }
+      store.markSynced(cid);
       await markAttempt(item.id!, null);
       await removeOutbox(item.id!);
     }
     setOutboxN(0);
     app.refreshOutbox();
-    setSyncMsg(t("scan.synced") + ` — ${items.length} report(s)`);
+    setSyncMsg(
+      apiUp
+        ? `${t("scan.synced")} — ${items.length} report(s) written to the demo API (idempotent: ${apiApplied} applied, ${apiReplayed} already applied)`
+        : `${t("scan.synced")} — ${items.length} report(s) marked synced in the LOCAL demo store (API unreachable — no server write claimed)`
+    );
     setDone((prev) => (prev ? { ...prev, c: store.getCase(prev.c.id)! } : prev));
   }, [app, store, t]);
 
@@ -216,10 +261,20 @@ export default function FieldScan() {
             <div>
               <label className="label" htmlFor="note">{t("scan.note")}</label>
               <textarea id="note" className="input min-h-[64px]" {...form.register("symptomNote")} />
+              <HindiDictation onTranscript={(text) => form.setValue("symptomNote", text, { shouldDirty: true })} />
             </div>
             <div className="rounded-lg border border-sand-300 p-3">
-              <button type="button" className="btn-secondary w-full text-sm" onClick={() => setVoiceOpen((v) => !v)}>🎙 {t("scan.voice")}</button>
-              {voiceOpen && <p className="mt-2 text-xs text-ink-600">{t("scan.voice.note")}</p>}
+              <p className="text-sm font-bold text-ink-800">🎙 Voice note (optional)</p>
+              <VoiceLanguageSelector value={voiceLang} onChange={setVoiceLang} />
+              <VoiceNoteRecorder consentGiven={consent} existing={voiceNote}
+                onSaved={(m) => setVoiceNote(m)} onDeleted={() => setVoiceNote(null)} />
+              <BhashiniPanel
+                voiceNote={voiceNote}
+                caseRef={activeCaseId ?? "DRAFT-FIELD-CASE"}
+                consentRef={consent ? "scan-consent-ack" : "no-consent"}
+                regional={voiceLang !== "hi"}
+                onConfirmed={(text) => form.setValue("symptomNote", text, { shouldDirty: true })}
+              />
             </div>
           </div>
           <div className="mt-4 flex gap-2">
@@ -232,7 +287,7 @@ export default function FieldScan() {
       {phase === "capture" && (
         <section className="card mt-4 p-4">
           <h2 className="text-lg font-extrabold text-ink-900">{t("scan.capture.title")}</h2>
-          <p className="mt-1 text-xs text-ink-500">Quality gate is checklist-driven in Task 001 (no computer-vision claims). Each item is one photo/view.</p>
+          <p className="mt-1 text-xs text-ink-500">Guided views below + real pixel analysis of every photo. Both stages are explained; neither is expert confirmation.</p>
           <div className="mt-3 grid gap-2">
             {CHECKLIST.map((item) => (
               <label key={item.key} className={`flex min-h-[52px] items-center gap-3 rounded-lg border px-3 text-sm font-semibold ${checklist[item.key] ? "border-leaf-600/50 bg-leaf-50" : "border-sand-300"}`}>
@@ -241,11 +296,7 @@ export default function FieldScan() {
               </label>
             ))}
           </div>
-          <label className="btn-secondary mt-3 flex w-full cursor-pointer items-center justify-center gap-2">
-            📷 {t("scan.capture.addPhoto")}
-            <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhotos((p) => [...p, f.name]); }} />
-          </label>
-          {photos.length > 0 && !app.lowBandwidth && <p className="mt-1 text-xs text-ink-500">Attached: {photos.join(", ")}</p>}
+          <CaptureStudio crop={values.crop} onChange={setBundle} />
 
           <div className={`mt-3 rounded-lg border px-3 py-2 ${quality.passed ? "border-leaf-600/40 bg-leaf-50" : "border-saffron-500/40 bg-saffron-50"}`} aria-live="polite">
             <div className="flex items-center justify-between text-sm font-bold">
@@ -256,6 +307,12 @@ export default function FieldScan() {
             {!quality.passed && (
               <div className="mt-1 text-xs text-ink-700">
                 <span className="font-bold">{t("scan.quality.recapture")}</span> {quality.recaptureRequests.join(", ")}
+              </div>
+            )}
+            {bundle && bundle.imageIds.length > 0 && (
+              <div className="mt-1 border-t border-sand-300 pt-1 text-xs text-ink-700">
+                <span className="font-bold">Pixel quality (real image analysis):</span>{" "}
+                {bundle.pixelQuality.pass ? `✓ ${(bundle.pixelQuality.score * 100).toFixed(0)}%` : `✗ ${(bundle.pixelQuality.score * 100).toFixed(0)}% — ${bundle.pixelQuality.recaptureInstructions[0] ?? "recapture needed"}`}
               </div>
             )}
           </div>
@@ -291,11 +348,17 @@ export default function FieldScan() {
             <p className="mt-2 text-xs text-ink-500">
               {done.c.pendingSync ? t("scan.saved.offline") : t("scan.synced")} · report and photos stay available offline on this device.
             </p>
+            {done.c.observations.at(-1)?.edgeInference && (
+              <p className="mt-1 text-xs text-ink-600">
+                <span className="chip mr-1 bg-ink-800 text-white">{done.c.observations.at(-1)!.edgeInference!.providerKind}</span>
+                {done.c.observations.at(-1)!.edgeInference!.topClass} · raw {done.c.observations.at(-1)!.edgeInference!.topScore.toFixed(2)} · research preview, expert verification required.
+              </p>
+            )}
           </div>
           {done.d && <DiagnosisPanel d={done.d} compact />}
           <div className="flex gap-2">
             <Link href="/cases" className="btn-secondary flex-1 text-center">{t("nav.cases")} →</Link>
-            <button type="button" className="btn-primary flex-1" onClick={() => { setDone(null); setPhase("consent"); setConsent(false); setChecklist({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false }); setPhotos([]); form.reset({ crop: "bajra", cropStage: "vegetative", symptomCategory: "", symptomNote: "" }); }}>
+            <button type="button" className="btn-primary flex-1" onClick={() => { setDone(null); setPhase("consent"); setConsent(false); setChecklist({ leafClose: false, lowerLeaf: false, wholePlant: false, lightingOk: false }); setBundle(null); setVoiceNote(null); form.reset({ crop: "bajra", cropStage: "vegetative", symptomCategory: "", symptomNote: "" }); }}>
               + New report
             </button>
           </div>

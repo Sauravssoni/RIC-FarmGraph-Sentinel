@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "purpose": "Crop-name aliases for querying the data.gov.in AGMARKNET mandi-price resource. Aliases follow the commodity naming used in AGMARKNET/eNAM publications; only the four FarmGraph pilot crops are mapped, Rajasthan only.",
+    "resource": "data.gov.in AGMARKNET current daily mandi price resource",
+    "compiledOn": "2026-07-21"
+  },
+  "aliases": {
+    "bajra": ["Bajra(Pearl Millet/Cumbu)", "Bajra", "Pearl Millet"],
+    "mustard": ["Mustard", "Rapeseed & Mustard", "Rai"],
+    "guar": ["Guar", "Guar Seed(Cluster Beans Seed)", "Cluster Bean Seed"],
+    "cumin": ["Cumin", "Jeera", "Cummin"]
+  }
+}

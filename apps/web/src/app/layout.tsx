@@ -1,13 +1,16 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { withBase } from "../lib/basePath";
 
+// Next does NOT prepend basePath to metadata URLs — prefix them explicitly so
+// the manifest and icons resolve under a GitHub Pages project subpath.
 export const metadata: Metadata = {
   title: { default: "FarmGraph Rakshak", template: "%s · FarmGraph Rakshak" },
   description:
     "Offline Crop Health & Outbreak Intelligence Grid for Rajasthan. Demo prototype — all data simulated.",
-  manifest: "/manifest.webmanifest",
-  icons: { icon: "/icons/icon.svg", apple: "/icons/icon-192.png" },
+  manifest: withBase("/manifest.webmanifest"),
+  icons: { icon: withBase("/icons/icon.svg"), apple: withBase("/icons/icon-192.png") },
 };
 
 export const viewport: Viewport = {

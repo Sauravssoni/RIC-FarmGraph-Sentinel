@@ -1,0 +1,47 @@
+# Render blueprint — optional connected demonstration hosting (Task 004).
+# All farmer/plot data remains synthetic. Free-tier API persistence is in-memory;
+# attach a disk or managed database for a real pilot. Government credentials are
+# never embedded in this file.
+
+services:
+  - type: web
+    name: farmgraph-rakshak-api
+    runtime: python
+    rootDir: apps/api
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/release/health
+    envVars:
+      - key: FGR_PERSIST
+        value: memory
+      - key: FGR_RATE_LIMIT
+        value: "90"
+      - key: FGR_ALLOWED_ORIGINS
+        sync: false   # set to the exact deployed frontend origin; comma-separate additional approved origins
+      - key: BHASHINI_ENABLED
+        sync: false
+      - key: BHASHINI_USER_ID
+        sync: false
+      - key: BHASHINI_API_KEY
+        sync: false
+      - key: BHASHINI_PIPELINE_ID
+        sync: false
+      - key: BHASHINI_CONFIG_URL
+        sync: false
+      - key: IMD_ENABLED
+        sync: false
+      - key: IMD_API_URL
+        sync: false
+      - key: DATAGOV_API_KEY
+        sync: false
+
+  - type: web
+    name: farmgraph-rakshak-web
+    runtime: static
+    rootDir: .
+    buildCommand: npm ci && python3 data/demo/generate_seed.py && npm run build --workspace apps/web
+    staticPublishPath: apps/web/out
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false   # set to https://farmgraph-rakshak-api.onrender.com after the API service is created

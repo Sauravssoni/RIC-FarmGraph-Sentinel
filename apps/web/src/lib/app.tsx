@@ -8,6 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Persona } from "@contracts";
 import { SEED } from "./seed";
 import { outboxCount } from "./offline";
+import { withBase } from "./basePath";
 
 export type ApiMode = "demo-provider" | "api-connected" | "api-fallback";
 
@@ -58,9 +59,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetch(`${API_URL}/api/v1/health`, { signal: AbortSignal.timeout(1500) })
       .then((r) => setApiMode(r.ok ? "api-connected" : "api-fallback"))
       .catch(() => setApiMode("api-fallback"));
-    // PWA service worker (demo-grade runtime caching; see docs/known-limitations)
+    // PWA service worker (demo-grade runtime caching; see docs/known-limitations).
+    // withBase: sw.js lives under the site base path (GitHub Pages subpath).
     if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+      navigator.serviceWorker.register(withBase("/sw.js")).catch(() => undefined);
     }
     return () => {
       window.removeEventListener("online", goOnline);

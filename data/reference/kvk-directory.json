@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "purpose": "Krishi Vigyan Kendra directory for the three pilot districts. All entries sourced from official ICAR/ATARI and KVK publications — no fabricated contacts.",
+    "primarySource": "ICAR-ATARI Zone-II Jodhpur official KVK list (atarijodhpur.res.in) and KVK official sites",
+    "sourceUrls": [
+      "https://atarijodhpur.res.in/establishment-year-of-kvks-of-rajasthan/",
+      "https://jodhpur1.kvk2.in/contact.php",
+      "https://jalore.kvk2.in/",
+      "https://icar.org.in/en/node/15020"
+    ],
+    "accessedOn": "2026-07-20",
+    "coordsNote": "Coordinates are approximate geocoded estimates for distance routing only — not official survey positions. Verify before field use."
+  },
+  "kvks": [
+    {
+      "id": "KVK-JODHPUR-1",
+      "name": "KVK Jodhpur-I (ICAR-CAZRI)",
+      "district": "Jodhpur",
+      "address": "Krishi Vigyan Kendra, ICAR-Central Arid Zone Research Institute, CAZRI Campus, Jodhpur - 342005",
+      "host": "ICAR-CAZRI",
+      "phone": "0291-2940396",
+      "email": "kvkcazrijodhpur1@gmail.com",
+      "website": "https://jodhpur1.kvk2.in",
+      "lat": 26.2516, "lon": 73.0094, "coordsApproximate": true,
+      "specialities": ["arid crops", "bajra", "dryland technology", "plant health clinic"],
+      "source": "jodhpur1.kvk2.in official contact page + ICAR-ATARI list"
+    },
+    {
+      "id": "KVK-JODHPUR-2",
+      "name": "KVK Jodhpur-II (Palodi)",
+      "district": "Jodhpur",
+      "address": "Krishi Vigyan Kendra, Palodi, Agriculture University Jodhpur",
+      "host": "Agriculture University, Jodhpur",
+      "phone": "9414269869",
+      "email": "kvkpalodi@gmail.com",
+      "website": "https://atarijodhpur.res.in/",
+      "lat": 26.35, "lon": 73.05, "coordsApproximate": true,
+      "specialities": ["extension", "seed production", "guar", "mustard"],
+      "source": "ICAR-ATARI Zone-II official list"
+    },
+    {
+      "id": "KVK-NAGAUR-1",
+      "name": "KVK Nagaur-I (Athiyasan)",
+      "district": "Nagaur",
+      "address": "Krishi Vigyan Kendra, P.O. No. 36, Athiyasan, Nagaur - 341001",
+      "host": "Agriculture University, Jodhpur",
+      "phone": "9758213377",
+      "email": "nagaurkvk@gmail.com",
+      "website": "https://atarijodhpur.res.in/",
+      "lat": 27.1849, "lon": 73.7119, "coordsApproximate": true,
+      "specialities": ["rainfed crops", "guar", "moth bean"],
+      "source": "ICAR-ATARI Zone-II official list + ICAR KVK address list"
+    },
+    {
+      "id": "KVK-NAGAUR-2",
+      "name": "KVK Nagaur-II (Maulasar)",
+      "district": "Nagaur",
+      "address": "Krishi Vigyan Kendra, Maulasar, Tehsil Didwana, Nagaur",
+      "host": "SKRAU, Bikaner",
+      "phone": "9412357983",
+      "email": "kvkmaulasar@gmail.com",
+      "website": "https://atarijodhpur.res.in/",
+      "lat": 27.4006, "lon": 74.5755, "coordsApproximate": true,
+      "specialities": ["mustard", "cumin", "saline soils"],
+      "source": "ICAR-ATARI Zone-II official list"
+    },
+    {
+      "id": "KVK-JALORE-1",
+      "name": "KVK Jalore-I (Keshwana)",
+      "district": "Jalore",
+      "address": "Krishi Vigyan Kendra, Keshwana, Jalore - 343001",
+      "host": "Agriculture University, Jodhpur",
+      "phone": "9414447974",
+      "email": "kvkjlr@gmail.com",
+      "website": "https://jalore.kvk2.in",
+      "lat": 25.2228, "lon": 72.3658, "coordsApproximate": true,
+      "specialities": ["cumin", "mustard", "seed production", "plant health clinic", "soil testing lab"],
+      "source": "ICAR-ATARI Zone-II official list + jalore.kvk2.in"
+    },
+    {
+      "id": "KVK-JALORE-2",
+      "name": "KVK Jalore-II (Bamanwara)",
+      "district": "Jalore",
+      "address": "Krishi Vigyan Kendra, Bamanwara, Jalore",
+      "host": "Agriculture University, Jodhpur",
+      "phone": "9033627130",
+      "email": "kvkbamanwara@gmail.com",
+      "website": "https://www.aujodhpur.ac.in/kvk.php?office=28",
+      "lat": 25.09, "lon": 71.86, "coordsApproximate": true,
+      "specialities": ["castor", "pomegranate", "IPM"],
+      "source": "ICAR-ATARI Zone-II official list + AU Jodhpur site"
+    }
+  ]
+}

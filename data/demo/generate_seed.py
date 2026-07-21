@@ -778,6 +778,7 @@ def main() -> None:
         "personas": PERSONAS, "farmers": FARMERS, "plots": PLOTS, "cropSeasons": SEASONS,
         "cases": sorted(CASES, key=lambda c: c["id"]), "clusters": CLUSTERS, "missions": MISSIONS,
         "advisories": ADVISORIES, "modelVersions": MODEL_VERSIONS, "auditEvents": audit,
+        "referrals": [], "learningRecords": [],
     }
     out = HERE / "seed.json"
     out.write_text(json.dumps(seed, ensure_ascii=False, indent=1))

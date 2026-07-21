@@ -8,6 +8,7 @@ import { StatusChip, ProvenanceTag, DemoBanner, SectionTitle } from "@/component
 import { EvidenceCard } from "@/components/EvidenceCard";
 import { DiagnosisPanel } from "@/components/DiagnosisPanel";
 import { AdvisoryCard } from "@/components/AdvisoryCard";
+import { KvkPanel } from "@/components/KvkPanel";
 import { Timeline } from "@/components/Timeline";
 import { conditionLabel, cropLabel, CONDITIONS } from "@/lib/seed";
 import { fmtDateTime } from "@/lib/format";
@@ -94,6 +95,8 @@ export function CaseDetail({ id }: { id: string }) {
           )}
 
           {advisory && <AdvisoryCard advisory={advisory} />}
+
+          <KvkPanel kase={c} />
 
           {c.followUps.length > 0 && (
             <section className="card p-4">

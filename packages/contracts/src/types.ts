@@ -38,9 +38,29 @@ export interface CaptureQuality {
   issues: string[];
   recaptureRequests: string[];
 }
+export interface EdgeInferenceRecord {
+  providerId: string; providerKind: "EDGE_MODEL" | "EDGE_HEURISTIC" | "DETERMINISTIC_FALLBACK" | "EXPERT_ONLY";
+  modelVersion: string; runtime: string; durationMs: number;
+  topClass: string; topScore: number; uncertainty: number;
+  abstain: boolean; abstainReasons: string[];
+  candidates: { classId: string; label: string; rawScore: number; spreadRisk: "low" | "medium" | "high"; supportedForCrop: boolean }[];
+  featuresUsed?: Record<string, number>;
+  screening?: { topLabel: string; topProb: number; plantLike: boolean; plantProb: number } | null;
+  recommendedNext: string[]; note: string; at: string;
+}
+export interface PixelQualitySummary {
+  score: number; pass: boolean;
+  failedChecks: string[]; recaptureInstructions: string[];
+}
 export interface CropObservation {
   id: string; at: string; symptomCategory: string; symptomNote: string;
   checklist: CaptureChecklist; imageCount: number; imageRef: string; quality: CaptureQuality;
+  /** Real image-evidence references (IndexedDB image ids) — Phase B. */
+  imageIds?: string[];
+  imageHashes?: string[];
+  pixelQuality?: PixelQualitySummary;
+  edgeInference?: EdgeInferenceRecord;
+  voiceNoteId?: string;
 }
 export interface EvidenceAsset { ref: string; kind: "simulated-image"; note: string; provenance: Provenance; }
 
@@ -138,11 +158,76 @@ export interface IntegrationAdapterStatus {
 
 export interface Persona { id: string; label: string; role: Role; note: string; }
 
+export interface KvkRecord {
+  id: string; name: string; district: string; address: string; host: string;
+  phone: string; email: string; website: string;
+  lat: number; lon: number; coordsApproximate: boolean;
+  specialities: string[]; source: string;
+}
+export type ReferralStatus = "DRAFT" | "READY_TO_SHARE" | "SHARED" | "ACKNOWLEDGED" | "RESPONDED" | "ESCALATED" | "CLOSED";
+export type ReferralUrgency = "ROUTINE" | "PRIORITY" | "URGENT";
+export type SlaStatus = "WITHIN_SLA" | "DUE_SOON" | "OVERDUE" | "COMPLETED";
+export interface Referral {
+  id: string; caseId: string; kvkId: string; reason: string; note: string;
+  urgency: ReferralUrgency;
+  createdBy: string; createdAt: string; status: ReferralStatus;
+  statusHistory: { status: ReferralStatus; at: string; actor: string; note?: string }[];
+  channel: "in_app_pack" | "printable_card";
+  slaTargetHours: number; dueAt: string;
+}
+
+/**
+ * Referral evidence pack — the downloadable handoff artefact for a KVK.
+ * Privacy rule: coordinates are rounded (~1 km) and the farmer reference is
+ * the pseudonymous FarmGraph ID only — never a name, phone, Aadhaar or
+ * Jan Aadhaar number. Mirrored field-for-field by the API pack endpoint.
+ */
+export interface ReferralPack {
+  packVersion: "kvk-referral-pack/v1";
+  generatedAt: string;
+  referralId: string; referralStatus: ReferralStatus; caseId: string;
+  farmerRef: string; plotRef: string;
+  district: string; block: string;
+  coordinates: { lat: number; lon: number; precisionNote: string };
+  crop: string; cropStage: string;
+  symptomSummary: string;
+  imageHashes: string[];
+  imageQuality: string;
+  inference: { provider: string; version: string; topLabel: string | null; topScore: number | null };
+  verificationStatement: string;
+  expertReviewState: string;
+  urgency: ReferralUrgency;
+  outbreakRelationship: string;
+  requestedAction: string;
+  originatingRole: string;
+  consentStatus: string;
+  createdAt: string;
+  sla: { targetHours: number; dueAt: string; status: SlaStatus };
+  auditReference: string;
+  farmgraphContact: string;
+  kvk: { id: string; name: string; district: string; phone: string | null; email: string | null; address: string };
+  provenance: string;
+}
+
+export interface LearningRecord {
+  id: string; caseId: string; observationId: string | null;
+  crop: string; cropStage: string; district: string; block: string;
+  aiLabel: string | null; aiTopScore: number | null; providerId: string | null;
+  expertLabel: string; reviewAction: "confirm" | "correct" | "unknown";
+  imageIds: string[]; voiceNoteId: string | null;
+  consentForTraining: boolean;
+  usedInModelVersion: string | null; // null until a reviewed training run consumes it
+  provenance: "EXPERT_VERIFIED_REVIEW";
+  createdAt: string;
+}
+export type ModelLifecycleState = "REGISTERED" | "CANDIDATE" | "EVALUATING" | "CHALLENGER" | "CHAMPION" | "RETIRED";
+
 export interface DemoSeed {
   meta: { scenario: string; demoNow: string; generatedBy: string; provenance: string; pilotRegions: string[] };
   personas: Persona[]; farmers: FarmerReference[]; plots: PlotReference[]; cropSeasons: CropSeason[];
   cases: Case[]; clusters: OutbreakCluster[]; missions: FieldMission[];
   advisories: Advisory[]; modelVersions: ModelVersion[]; auditEvents: AuditEvent[];
+  referrals: Referral[]; learningRecords: LearningRecord[];
 }
 
 export interface OverviewKpis {

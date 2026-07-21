@@ -10,6 +10,7 @@ import { MapView } from "@/components/MapView";
 import { CROPS } from "@/lib/seed";
 import { fmtDateTime, STATE_META } from "@/lib/format";
 import { cropLabel } from "@/lib/seed";
+import { nearestKvks } from "@/lib/kvk";
 
 export default function CommandCentre() {
   const app = useApp();
@@ -210,10 +211,48 @@ export default function CommandCentre() {
         </div>
       </div>
 
+      <section className="card mt-4 p-4">
+        <SectionTitle title="Last-mile expert coverage" sub="KVK support-point reach across pilot cases (directory from official ICAR-ATARI sources)" right={<Link href="/support" className="text-xs font-bold text-ink-700 underline">KVK directory →</Link>} />
+        <LastMileCoverage />
+      </section>
+
       <p className="mt-4 text-xs text-ink-500">
         State semantics: suspected (AI-triaged, unverified) → expert-confirmed/corrected → advisory → follow-up → outcome.
         Every card drills into underlying cases. All values are demo data. {STATE_META.AWAITING_EXPERT.label} cases are prioritised by documented policy, not by model certainty alone.
       </p>
+    </div>
+  );
+}
+
+/** Last-mile KVK coverage across pilot cases (estimated distances, labelled). */
+function LastMileCoverage() {
+  const state = useDemoStore((s) => s.getState());
+  const rows = useMemo(() => {
+    const open = state.cases.filter((c) => !["RESOLVED", "CLOSED_DUPLICATE", "CLOSED_UNKNOWN"].includes(c.state));
+    const distances = open.map((c) => nearestKvks(c.lat, c.lon, c.district, 1)[0]);
+    const max = Math.max(...distances.map((d) => d.distanceKm));
+    const pending = state.referrals.filter((r) => r.status !== "CLOSED" && r.status !== "RESPONDED");
+    const beyond30 = open.filter((c, i) => distances[i].distanceKm > 30);
+    return { openCount: open.length, max, pending, beyond30, distances, open };
+  }, [state]);
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-lg border border-sand-300 bg-sand-50 p-3">
+        <p className="text-2xl font-extrabold tabular-nums">{rows.max.toFixed(0)} km</p>
+        <p className="text-xs text-ink-600">Farthest open case from its nearest KVK (estimated, coords approximate)</p>
+      </div>
+      <div className="rounded-lg border border-sand-300 bg-sand-50 p-3">
+        <p className="text-2xl font-extrabold tabular-nums">{rows.beyond30.length}</p>
+        <p className="text-xs text-ink-600">Open cases &gt;30 km from a KVK — prioritise for assisted follow-up</p>
+        {rows.beyond30.slice(0, 3).map((c) => (
+          <p key={c.id} className="mt-1 text-xs"><Link className="font-mono font-bold underline" href={`/cases/${c.id}/`}>{c.id}</Link> {c.district}</p>
+        ))}
+      </div>
+      <div className="rounded-lg border border-sand-300 bg-sand-50 p-3">
+        <p className="text-2xl font-extrabold tabular-nums">{rows.pending.length}</p>
+        <p className="text-xs text-ink-600">Referrals awaiting KVK response (simulated delivery)</p>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,31 @@
+# FarmGraph Rakshak — one-command demo stack (web + optional API).
+# Everything served is SIMULATED demo data; the API uses a labelled
+# single-node SQLite store (./data/runtime/fgr.db on the host).
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: farmgraph-rakshak-api:0.2.0
+    ports:
+      - "8000:8000"
+    environment:
+      FGR_DB_PATH: /data/fgr.db
+      # FGR_PERSIST: memory          # uncomment for pure in-memory mode
+      # FGR_RATE_LIMIT: "90"         # demo write rate limit (writes/min)
+      # DATAGOVIN_API_KEY: ""        # enables live AGMARKNET fetch in scripts/fetch_public_data.py
+    volumes:
+      - fgr-data:/data
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: farmgraph-rakshak-web:0.2.0
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  fgr-data:

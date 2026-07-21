@@ -13,6 +13,7 @@ import type {
 } from "@contracts";
 import { freshSeed } from "./seed";
 import { captureQuality, diagnose, expertPriority, outbreakScore, representativeOrder } from "./engine";
+import { canTransitionReferral, DEFAULT_SLA_HOURS } from "./kvk";
 
 const STORAGE_KEY = "fgr-demo-state-v1";
 const CLOSED = new Set(["RESOLVED", "CLOSED_UNKNOWN", "CLOSED_DUPLICATE"]);
@@ -124,7 +125,13 @@ export class DemoStore {
     return c;
   }
 
-  addObservation(caseId: string, input: { symptomCategory: string; symptomNote: string; checklist: CaptureChecklist; at?: string }) {
+  addObservation(caseId: string, input: {
+    symptomCategory: string; symptomNote: string; checklist: CaptureChecklist; at?: string;
+    imageIds?: string[]; imageHashes?: string[];
+    pixelQuality?: { score: number; pass: boolean; failedChecks: string[]; recaptureInstructions: string[] };
+    edgeInference?: import("@contracts").EdgeInferenceRecord;
+    voiceNoteId?: string;
+  }) {
     const c = this.getCase(caseId);
     if (!c) return undefined;
     const at = input.at ?? nowIso();
@@ -133,18 +140,31 @@ export class DemoStore {
     const obs = {
       id: `${c.id}-O${n}`, at, symptomCategory: input.symptomCategory, symptomNote: input.symptomNote,
       checklist: input.checklist,
-      imageCount: [input.checklist.leafClose, input.checklist.lowerLeaf, input.checklist.wholePlant].filter(Boolean).length,
+      imageCount: input.imageIds?.length ?? [input.checklist.leafClose, input.checklist.lowerLeaf, input.checklist.wholePlant].filter(Boolean).length,
       imageRef: `sim-evidence://${c.id}/${n}`, quality: q,
+      ...(input.imageIds ? { imageIds: input.imageIds } : {}),
+      ...(input.imageHashes ? { imageHashes: input.imageHashes } : {}),
+      ...(input.pixelQuality ? { pixelQuality: input.pixelQuality } : {}),
+      ...(input.edgeInference ? { edgeInference: input.edgeInference } : {}),
+      ...(input.voiceNoteId ? { voiceNoteId: input.voiceNoteId } : {}),
     };
     c.observations.push(obs);
     this.append(c, at, "capture_submitted", "field worker FW-07 (demo)",
-      `Evidence capture submitted (${obs.imageCount} view(s), coverage ${q.coverageScore.toFixed(2)})`);
-    if (!q.passed) {
+      `Evidence capture submitted (${obs.imageCount} view(s), coverage ${q.coverageScore.toFixed(2)}${input.pixelQuality ? `, pixel-quality ${input.pixelQuality.score.toFixed(2)}` : ""})`);
+    // Quality gate = guided-view checklist AND pixel analysis (when images exist).
+    const pixelFailed = input.pixelQuality ? !input.pixelQuality.pass : false;
+    if (!q.passed || pixelFailed) {
       c.state = "NEEDS_RECAPTURE";
-      this.append(c, at, "quality_failed", "system (demo)", `Quality gate failed: ${q.issues.join("; ")}`);
+      const why = [...q.issues, ...(pixelFailed ? input.pixelQuality!.failedChecks : [])];
+      this.append(c, at, "quality_failed", "system (demo)", `Quality gate failed: ${why.join("; ") || "pixel quality below threshold"}`);
     } else {
-      this.append(c, at, "quality_passed", "system (demo)", `Capture quality gate passed (coverage ${q.coverageScore.toFixed(2)})`);
+      this.append(c, at, "quality_passed", "system (demo)", `Capture quality gate passed (coverage ${q.coverageScore.toFixed(2)}${input.pixelQuality ? `, pixel ${input.pixelQuality.score.toFixed(2)}` : ""})`);
       if (["DRAFT", "CAPTURE_PENDING", "NEEDS_RECAPTURE"].includes(c.state)) c.state = "READY_FOR_TRIAGE";
+    }
+    if (input.edgeInference) {
+      const ei = input.edgeInference;
+      this.append(c, at, "edge_inference", `${ei.providerId} (${ei.providerKind})`,
+        `Edge inference: ${ei.topClass} @ ${ei.topScore.toFixed(2)} raw, uncertainty ${ei.uncertainty.toFixed(2)}${ei.abstain ? " — ABSTAINED" : ""} [research preview, not accuracy]`);
     }
     this.emit();
     return obs;
@@ -192,6 +212,28 @@ export class DemoStore {
     };
     c.reviews.push(r);
     const label = (id: string | null) => (id ? id : "?");
+    // Learning flywheel: every expert decision on evidence becomes a labelled
+    // learning record with provenance — the raw material of future training.
+    if (input.decision === "confirm" || input.decision === "correct" || input.decision === "unknown") {
+      const expertLabel = input.decision === "unknown" ? "unknown" : (input.conditionId ?? lead ?? "unknown");
+      const lastObs = c.observations.at(-1);
+      const n = this.state.learningRecords.length + 1;
+      this.state.learningRecords.push({
+        id: `LR-${2600 + n}`, caseId: c.id, observationId: lastObs?.id ?? null,
+        crop: c.crop, cropStage: c.cropStage, district: c.district, block: c.block,
+        aiLabel: lead, aiTopScore: c.diagnosis?.candidates[0]?.simConfidence ?? null,
+        providerId: lastObs?.edgeInference?.providerId ?? c.diagnosis?.modelVersion ?? null,
+        expertLabel, reviewAction: input.decision,
+        imageIds: c.observations.flatMap((o) => o.imageIds ?? []),
+        voiceNoteId: c.observations.map((o) => o.voiceNoteId).find(Boolean) ?? null,
+        consentForTraining: c.consent.given,
+        usedInModelVersion: null,
+        provenance: "EXPERT_VERIFIED_REVIEW",
+        createdAt: at,
+      });
+      this.append(c, at, "learning_recorded", "system (demo)",
+        `Learning record created (ai=${label(lead)} → expert=${expertLabel}) — queued for future evaluated training, not auto-training`);
+    }
     switch (input.decision) {
       case "confirm":
         c.expertConfirmedCondition = input.conditionId ?? lead;
@@ -255,6 +297,70 @@ export class DemoStore {
     if (input.status === "resolved") c.outcome = { status: "resolved", note: input.note, updatedAt: at };
     this.emit();
     return fu;
+  }
+
+  createReferral(caseId: string, input: {
+    kvkId: string; reason: string; note: string;
+    channel?: "in_app_pack" | "printable_card";
+    urgency?: import("@contracts").ReferralUrgency;
+    slaTargetHours?: number;
+  }) {
+    const c = this.getCase(caseId);
+    if (!c) return undefined;
+    const at = nowIso();
+    const slaHours = input.slaTargetHours ?? DEFAULT_SLA_HOURS;
+    const dueAt = new Date(new Date(at).getTime() + slaHours * 3600_000).toISOString();
+    const n = this.state.referrals.length + 1;
+    // Creation lands at READY_TO_SHARE (never SHARED): external KVK delivery
+    // is not automated in this demo, so a new referral must not imply receipt.
+    const ref: import("@contracts").Referral = {
+      id: `REF-${2600 + n}`, caseId, kvkId: input.kvkId, reason: input.reason, note: input.note,
+      urgency: input.urgency ?? "PRIORITY",
+      createdBy: "expert.demo", createdAt: at, status: "READY_TO_SHARE",
+      statusHistory: [{ status: "READY_TO_SHARE", at, actor: "expert.demo", note: "Evidence pack prepared — external KVK delivery not automated (demo)" }],
+      channel: input.channel ?? "in_app_pack",
+      slaTargetHours: slaHours, dueAt,
+    };
+    this.state.referrals.push(ref);
+    this.append(c, at, "kvk_referral", "expert (KVK persona, demo)",
+      `Referred to ${input.kvkId} — ${input.reason} [${ref.urgency}]`);
+    this.emit();
+    return ref;
+  }
+
+  /** Standalone mirror of the API voice-transcript confirmation (audited). */
+  confirmVoiceTranscript(caseId: string, input: {
+    transcript: string;
+    confirmationStatus: "CONFIRMED_AS_RETURNED" | "CONFIRMED_AFTER_EDIT";
+    regional?: boolean;
+  }) {
+    const c = this.getCase(caseId);
+    if (!c) return undefined;
+    const at = nowIso();
+    if (input.regional) {
+      c.state = "AWAITING_EXPERT";
+      this.append(c, at, "regional_speech_review", "field worker (demo)",
+        "REGIONAL SPEECH — HUMAN REVIEW REQUIRED (Marwari/Mewari voice note; no ASR claimed)");
+    }
+    this.append(c, at, "voice_transcript_confirmed", "field worker (demo)",
+      `Voice transcript confirmed (${input.confirmationStatus === "CONFIRMED_AFTER_EDIT" ? "after edit" : "as returned"})`);
+    this.emit();
+    return c;
+  }
+
+  updateReferralStatus(refId: string, status: import("@contracts").ReferralStatus, note?: string) {
+    const ref = this.state.referrals.find((r) => r.id === refId);
+    if (!ref) return undefined;
+    // Same transition guard as the API (REFERRAL_FLOW mirror).
+    if (!canTransitionReferral(ref.status, status)) return undefined;
+    if (status === "ESCALATED" && !note?.trim()) return undefined; // escalation note required
+    const at = nowIso();
+    ref.status = status;
+    ref.statusHistory.push({ status, at, actor: "expert.demo", ...(note ? { note } : {}) });
+    const c = this.getCase(ref.caseId);
+    if (c) this.append(c, at, "kvk_referral_update", "KVK expert (demo)", `Referral ${ref.id} → ${status}${note ? ` — ${note}` : ""}`);
+    this.emit();
+    return ref;
   }
 
   generateMission(clusterId: string): FieldMission | { error: string } {
