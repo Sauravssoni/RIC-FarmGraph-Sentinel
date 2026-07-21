@@ -6,6 +6,7 @@ import { getStore, useDemoStore } from "@/lib/store";
 import { apiDemoReset } from "@/lib/httpProvider";
 import { DemoBanner } from "@/components/bits";
 import NegativePath from "@/components/NegativePath";
+import GovInfraPath from "@/components/GovInfraPath";
 
 const GOLDEN = "C-2614";
 const CLUSTER = "CL-2601";
@@ -91,7 +92,7 @@ const STEPS: Step[] = [
 
 export default function DemoController() {
   const store = getStore();
-  const [mode, setMode] = useState<"golden" | "negative">("golden");
+  const [mode, setMode] = useState<"golden" | "negative" | "govinfra">("golden");
   const [step, setStep] = useState(0);
   const [log, setLog] = useState<string[]>([]);
   const golden = useDemoStore((s) => s.getState().cases.find((c) => c.id === GOLDEN));
@@ -215,9 +216,14 @@ export default function DemoController() {
           className={`btn-secondary !min-h-[40px] text-sm ${mode === "negative" ? "!bg-ink-900 !text-sand-50" : ""}`}>
           ② Negative path (adversarial)
         </button>
+        <button type="button" role="tab" aria-selected={mode === "govinfra"} onClick={() => setMode("govinfra")}
+          className={`btn-secondary !min-h-[40px] text-sm ${mode === "govinfra" ? "!bg-ink-900 !text-sand-50" : ""}`}>
+          ③ Government infrastructure (12 steps)
+        </button>
       </div>
 
       {mode === "negative" && <NegativePath />}
+      {mode === "govinfra" && <GovInfraPath />}
 
       {mode === "golden" && (<>
       <div className="mt-4 h-2.5 rounded-full bg-sand-200" role="progressbar" aria-valuenow={completedCount} aria-valuemax={STEPS.length} aria-label="Demo progress">
