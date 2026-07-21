@@ -68,6 +68,14 @@ test("digital twins index + golden twin with scenario simulator", async ({ page 
   await page.getByRole("button", { name: /Expert confirms/i }).first().click();
   await expect(page.getByText(/not a biological prediction/i).first()).toBeVisible();
   await expect(page.getByText(/65\.5 \(SUSPECTED\) → 71\.5 \(VERIFIED\)/).first()).toBeVisible();
+
+  // government data rail — every lane provenance-labelled, nothing claimed live
+  await expect(page.getByText("Government data rail").first()).toBeVisible();
+  await expect(page.getByText(/SIMULATED IDS/).first()).toBeVisible();
+  await expect(page.getByText(/IMD_IP_WHITELIST_REQUIRED/).first()).toBeVisible();
+  await expect(page.getByText(/MANDI_CREDENTIALS_REQUIRED/).first()).toBeVisible();
+  await expect(page.getByText(/SAMPLE SHAPE/).first()).toBeVisible();
+  await expect(page.getByText(/CONTRACT_DEFINED/).first()).toBeVisible();
 });
 
 test("support page lists sourced KVK directory", async ({ page }) => {

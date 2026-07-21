@@ -5,6 +5,7 @@ import { useDemoStore } from "@/lib/store";
 import { deriveTwin, simulateScenario, TWIN_STATE_META, type TwinState } from "@/lib/twin";
 import { DemoBanner, StatusChip } from "@/components/bits";
 import { Timeline } from "@/components/Timeline";
+import { TwinGovRail } from "@/components/TwinGovRail";
 import { fmtDate, fmtDateTime } from "@/lib/format";
 
 const SCENARIOS = [
@@ -68,6 +69,9 @@ export default function TwinDetail({ plotId }: { plotId: string }) {
               <p className="rounded-md bg-sand-100 px-2 py-1.5"><span className="font-bold">Weather context:</span> {twin.weatherNote}</p>
             </div>
           </section>
+
+          {/* government data rail — every lane provenance-labelled */}
+          <TwinGovRail twin={twin} />
 
           {/* cases & evidence */}
           <section className="card p-4">
