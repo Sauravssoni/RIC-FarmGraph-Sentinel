@@ -40,10 +40,9 @@ test("judge mode: client-side adversarial checks repel attacks live", async ({ p
 });
 
 test("digital twins index + golden twin with scenario simulator", async ({ page }) => {
-  // Act 2 takes the golden case through evidence rejection, recapture, sync and triage.
   await page.locator('ol[aria-label="Demo acts"] button').nth(1).click();
   await page.locator("button.btn-green").click();
-  await expect(page.locator("section", { hasText: "Golden case live state" })).toContainText("AWAITING_EXPERT");
+  await expect(page.locator('section[aria-label="Golden case live state"]')).toContainText("AWAITING_EXPERT");
 
   await page.goto("digital-twins/");
   await expect(page.locator("main, body").getByText(/RJ-DEMO-PLOT-118/).first()).toBeVisible();
