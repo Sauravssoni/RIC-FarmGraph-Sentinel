@@ -6,6 +6,7 @@ import { DemoBanner, KpiCard, StatusChip } from "@/components/bits";
 import { FilterBar, DEFAULT_FILTERS, type CaseFilters } from "@/components/FilterBar";
 import { MapView } from "@/components/MapView";
 import { useApp } from "@/lib/app";
+import { buildDecisionIntelligence, type DecisionIntelligence, type DecisionPriority } from "@/lib/decisionIntelligence";
 import { fmtDateTime } from "@/lib/format";
 import { nearestKvks } from "@/lib/kvk";
 import { CROPS, cropLabel } from "@/lib/seed";
@@ -50,10 +51,21 @@ export default function CommandCentre() {
   );
   const selectedCluster = data.clusters.find((c) => c.id === selectedClusterId) ?? topCluster;
   const openReferrals = data.referrals.filter((r) => !["CLOSED", "RESPONDED"].includes(r.status));
-  const activeMissions = data.missions.filter((m) => m.status !== "COMPLETED");
   const activeClusterCount = data.clusters.filter((cluster) => cluster.status !== "DISMISSED").length;
   const latestCases = [...filtered].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 7);
   const o = data.overview;
+  const intelligence = useMemo(
+    () => buildDecisionIntelligence({
+      cases: data.cases,
+      clusters: data.clusters,
+      missions: data.missions,
+      referrals: data.referrals,
+      demoNow: data.demoNow,
+      queueLength: data.queue.length,
+      pendingSync: data.overview.pendingSync,
+    }),
+    [data.cases, data.clusters, data.demoNow, data.missions, data.overview.pendingSync, data.queue.length, data.referrals],
+  );
 
   return (
     <div className="mx-auto max-w-[1480px] px-3 pb-10 pt-4 sm:px-5 sm:pt-5">
@@ -70,7 +82,7 @@ export default function CommandCentre() {
               Crop-health operations command centre
             </h1>
             <p className="mt-2 max-w-4xl text-sm leading-6 text-ink-400">
-              Prioritise expert decisions, outbreak verification, field missions, KVK support and farmer follow-up from one traceable operating view.
+              Prioritise expert decisions, forecast operational load, verify outbreak signals, coordinate field missions and protect KVK response SLAs from one traceable view.
             </p>
           </div>
 
@@ -168,7 +180,7 @@ export default function CommandCentre() {
         </div>
       </section>
 
-      <section className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.65fr)]">
+      <section className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.75fr)]">
         <div className="card overflow-hidden">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-sand-200 px-4 py-4 sm:px-5">
             <div>
@@ -196,18 +208,7 @@ export default function CommandCentre() {
           </div>
         </div>
 
-        <div className="card p-4 sm:p-5">
-          <p className="eyebrow">Response pipeline</p>
-          <h2 className="mt-1 text-xl font-extrabold text-ink-950">From signal to outcome</h2>
-          <p className="mt-1 text-sm leading-relaxed text-ink-500">A concise operational chain, not a collection of disconnected features.</p>
-          <div className="mt-5 space-y-1">
-            <PipelineRow step="01" label="Field signals" value={o.activeCases} note="Open reports with traceable evidence" />
-            <PipelineRow step="02" label="Expert decisions" value={o.awaitingExpert} note="Cases awaiting structured review" />
-            <PipelineRow step="03" label="Field response" value={activeMissions.length} note="Verification missions in progress" />
-            <PipelineRow step="04" label="Measured outcomes" value={o.resolvedOrImproving} note="Cases improving or resolved" last />
-          </div>
-          <Link href="/digital-twins" className="btn-primary mt-5 w-full">Open Farm Digital Twins</Link>
-        </div>
+        <DecisionIntelligencePanel intelligence={intelligence} />
       </section>
 
       <section className="card mt-6 p-4 sm:p-5">
@@ -223,7 +224,7 @@ export default function CommandCentre() {
       </section>
 
       <p className="mt-5 text-center text-xs leading-relaxed text-ink-400">
-        Simulated pilot data · deterministic demo clock · no model-accuracy claim · no government adapter shown as live without verified access.
+        Simulated pilot data · explainable 72-hour operational forecast · no model-accuracy claim · no government adapter shown as live without verified access.
       </p>
     </div>
   );
@@ -246,15 +247,103 @@ function MiniMetric({ value, label }: { value: string | number; label: string })
   );
 }
 
-function PipelineRow({ step, label, value, note, last = false }: { step: string; label: string; value: string | number; note: string; last?: boolean }) {
+function DecisionIntelligencePanel({ intelligence }: { intelligence: DecisionIntelligence }) {
+  const maxTrend = Math.max(1, ...intelligence.signalTrend.map((item) => item.value));
+  const loadDelta = intelligence.expertLoadChangePct > 0
+    ? `+${intelligence.expertLoadChangePct}%`
+    : `${intelligence.expertLoadChangePct}%`;
+
   return (
-    <div className="relative flex gap-3 pb-5">
-      {!last && <span className="absolute left-[17px] top-9 h-[calc(100%-24px)] w-px bg-sand-300" aria-hidden="true" />}
-      <span className="relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-900 text-[11px] font-extrabold text-white">{step}</span>
-      <div className="min-w-0 flex-1 pt-0.5">
-        <div className="flex items-center justify-between gap-3"><p className="text-sm font-extrabold text-ink-950">{label}</p><p className="text-lg font-extrabold text-ink-950 tabular-nums">{value}</p></div>
-        <p className="mt-0.5 text-xs leading-relaxed text-ink-500">{note}</p>
+    <aside className="card p-4 sm:p-5" data-testid="decision-intelligence">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow">AI decision intelligence</p>
+          <h2 className="mt-1 text-xl font-extrabold text-ink-950">Next 72 hours</h2>
+          <p className="mt-1 text-xs leading-relaxed text-ink-500">Transparent operational forecast—not a black-box agronomic decision.</p>
+        </div>
+        <span className="chip border-leaf-600/30 bg-leaf-100 text-leaf-700">Explainable forecast</span>
       </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <ForecastMetric value={intelligence.expertLoad72h} label="Expert decisions" note={`${loadDelta} signal flow vs prior 72h`} tone="saffron" />
+        <ForecastMetric value={intelligence.districtsTrendingUp} label="Districts rising" note={intelligence.topRisingDistrict ? `${intelligence.topRisingDistrict.district} leads` : "No upward district trend"} />
+        <ForecastMetric value={intelligence.kvkSlaRisk24h} label="KVK SLA risk" note="Due within 24 hours" tone={intelligence.kvkSlaRisk24h ? "alert" : "leaf"} />
+        <ForecastMetric value={`~${intelligence.estimatedMinutesAvoided}m`} label="Officer time avoided" note="Estimated per review cycle" tone="leaf" />
+      </div>
+
+      <div className="mt-5 rounded-xl border border-sand-200 bg-sand-50/70 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-extrabold text-ink-900">Signal trend and forecast</p>
+            <p className="text-[10px] text-ink-400">7 observed days · 3 forecast days</p>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wide text-ink-400">Cases/day</span>
+        </div>
+        <div className="mt-3 flex h-24 items-end gap-1.5" aria-label="Seven observed and three forecast daily signal counts">
+          {intelligence.signalTrend.map((item, index) => (
+            <div key={`${item.label}-${index}`} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
+              <span className="text-[9px] font-bold tabular-nums text-ink-500">{item.value}</span>
+              <span
+                className={`w-full rounded-t-sm ${item.kind === "forecast" ? "border border-dashed border-saffron-600/60 bg-saffron-100" : "bg-ink-800"}`}
+                style={{ height: `${Math.max(8, (item.value / maxTrend) * 62)}px` }}
+                title={`${item.label}: ${item.value} ${item.kind}`}
+              />
+              <span className={`text-[9px] font-bold ${item.kind === "forecast" ? "text-saffron-700" : "text-ink-400"}`}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-extrabold uppercase tracking-[0.13em] text-ink-500">Recommended next actions</p>
+          <span className="text-[10px] font-bold text-ink-400">Ranked automatically</span>
+        </div>
+        <div className="mt-2 space-y-2">
+          {intelligence.actions.map((action, index) => (
+            <Link key={action.id} href={action.href} className="block rounded-xl border border-sand-200 p-3 transition hover:border-ink-300 hover:bg-sand-50">
+              <div className="flex items-start gap-3">
+                <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-ink-900 text-[10px] font-extrabold text-white">{index + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-extrabold text-ink-950">{action.title}</p>
+                    <PriorityChip priority={action.priority} />
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-500">{action.detail}</p>
+                  <p className="mt-1 text-[10px] font-bold text-ink-400">{action.evidence}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <details className="mt-4 border-t border-sand-200 pt-3">
+        <summary className="cursor-pointer text-xs font-extrabold text-ink-600">How the forecast and workload estimate are calculated</summary>
+        <ul className="mt-2 space-y-1.5 text-[10px] leading-relaxed text-ink-500">
+          {intelligence.assumptions.map((item) => <li key={item}>• {item}</li>)}
+        </ul>
+      </details>
+    </aside>
+  );
+}
+
+function PriorityChip({ priority }: { priority: DecisionPriority }) {
+  const style = priority === "CRITICAL"
+    ? "border-alert-600/30 bg-alert-100 text-alert-700"
+    : priority === "HIGH"
+      ? "border-saffron-500/40 bg-saffron-100 text-saffron-700"
+      : "border-sand-300 bg-sand-100 text-ink-600";
+  return <span className={`chip ${style}`}>{priority}</span>;
+}
+
+function ForecastMetric({ value, label, note, tone = "ink" }: { value: string | number; label: string; note: string; tone?: "ink" | "leaf" | "saffron" | "alert" }) {
+  const accent = tone === "leaf" ? "text-leaf-700" : tone === "saffron" ? "text-saffron-700" : tone === "alert" ? "text-alert-700" : "text-ink-950";
+  return (
+    <div className="rounded-xl border border-sand-200 bg-white p-3">
+      <p className={`text-2xl font-extrabold tracking-tight tabular-nums ${accent}`}>{value}</p>
+      <p className="mt-1 text-xs font-extrabold text-ink-900">{label}</p>
+      <p className="mt-1 text-[10px] leading-relaxed text-ink-400">{note}</p>
     </div>
   );
 }
