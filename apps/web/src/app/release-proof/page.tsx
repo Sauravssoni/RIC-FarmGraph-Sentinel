@@ -59,7 +59,7 @@ export default function ConnectedReleaseProofPage() {
       const screening = await runOnnxScreening(pixels);
       setImage(meta);
       setQuality(q);
-      setInference({ ...heuristic, screening });
+      setInference({ ...heuristic, screening: screening ?? undefined });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
       setImage(null);

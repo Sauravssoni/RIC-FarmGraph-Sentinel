@@ -5,7 +5,7 @@
   "description": "FarmGraph Rakshak — government-grade offline crop-health, Farm Digital Twin and outbreak-response prototype for Rajasthan",
   "packageManager": "npm@10.8.2",
   "engines": {
-    "node": "20.x",
+    "node": "24.x",
     "npm": "10.x"
   },
   "workspaces": [
