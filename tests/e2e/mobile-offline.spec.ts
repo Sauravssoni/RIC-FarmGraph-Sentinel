@@ -10,7 +10,7 @@ import { devices, expect, test } from "@playwright/test";
 test.describe("mobile offline PWA release proof", () => {
   test.use({ ...devices["Pixel 7"] });
 
-  test("installs a valid manifest and reloads the command centre fully offline", async ({ page, context }) => {
+  test("installs a valid manifest and reloads the command centre fully offline", async ({ page, context }, testInfo) => {
     await page.goto("command-centre/");
     await expect(page.getByRole("heading", { name: "Crop-health operations command centre" })).toBeVisible();
 
@@ -42,19 +42,20 @@ test.describe("mobile offline PWA release proof", () => {
     // in the service worker runtime cache before the hard offline proof.
     await page.reload();
     await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
-    await expect(page.getByText("Standalone deterministic demo")).toBeVisible();
+    await expect(page.getByText("Standalone deterministic demo").first()).toBeVisible();
 
     const onlineWidth = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(onlineWidth).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath("pixel7-online-command-centre.png"), fullPage: true });
 
     await context.setOffline(true);
     await page.reload({ waitUntil: "domcontentloaded" });
 
     await expect(page.getByRole("heading", { name: "Crop-health operations command centre" })).toBeVisible();
-    await expect(page.getByText("Standalone deterministic demo")).toBeVisible();
-    await expect(page.getByText("What needs action now")).toBeVisible();
+    await expect(page.getByText("Standalone deterministic demo").first()).toBeVisible();
+    await expect(page.getByText("What needs action now").first()).toBeVisible();
 
     const offlineState = await page.evaluate(() => ({
       browserOnline: navigator.onLine,
@@ -64,5 +65,6 @@ test.describe("mobile offline PWA release proof", () => {
     expect(offlineState.browserOnline).toBeFalsy();
     expect(offlineState.controlled).toBeTruthy();
     expect(offlineState.overflow).toBeLessThanOrEqual(1);
+    await page.screenshot({ path: testInfo.outputPath("pixel7-offline-command-centre.png"), fullPage: true });
   });
 });
