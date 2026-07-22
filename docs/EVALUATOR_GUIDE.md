@@ -8,7 +8,7 @@ FarmGraph Rakshak is an offline-first crop-health and outbreak-response prototyp
 
 Open `/demo/` and stay on **Primary evaluator proof**. The challenge-coverage ribbon maps the product directly to Rajasthan’s four requested features.
 
-1. **See the operational picture** — open the command centre and identify the highest-priority field, cluster and decision queue.
+1. **See the operational picture** — open the command centre and identify the highest-priority field, cluster and decision queue. The same screen forecasts the next 72 hours of expert load, detects rising districts, identifies KVK SLA risk and ranks next-best actions.
 2. **Prove offline evidence before AI** — one action rejects a weak capture, guides recapture, restores sync and routes the usable report through honest triage. The linked field route provides real image and voice capture; Hindi ASR is used only when configured and regional speech remains human-reviewed.
 3. **Put the expert in control** — a structured expert decision confirms the case, creates a governed local learning record and strengthens the nearby outbreak signal.
 4. **Coordinate mission, KVK and advisory** — generate a representative mission, prepare a privacy-masked referral for the nearest sourced KVK and issue only the approved, versioned non-chemical advisory. The referral remains `READY_TO_SHARE`; external delivery is not fabricated.
@@ -25,11 +25,32 @@ Open `/command-centre/` and look for:
 - four mathematically defined decision metrics rather than a wall of KPIs;
 - a clear **What needs action now** rail;
 - explicit expert, mission, sync and KVK delivery state;
+- one compact **AI decision intelligence** card replacing a generic pipeline graphic;
+- a seven-day signal trend and transparent three-day forecast;
+- forecast expert load, rising-district detection and KVK SLA risk;
+- ranked next-best actions linked to the actual expert, outbreak, support and field workflows;
+- an explicit operator-time avoidance estimate with the calculation disclosed;
 - advanced filters hidden behind **Refine map view**;
 - direct drill-down from every metric and priority item;
 - clear simulated-data and provider-state labels.
 
-The command centre is designed to answer one government operating question: **where should the next response happen, and why?**
+The command centre is designed to answer two government operating questions: **where should the next response happen, and what should the team do first?**
+
+### How the intelligence reduces manual overload
+
+The decision layer does not replace agronomists. It automates repetitive coordination work:
+
+| Manual burden | Product automation |
+|---|---|
+| Scan the full case register | Spread-risk, uncertainty and evidence-aware expert queue |
+| Manually compare recent reports | Seven-day trend and 72-hour workload forecast |
+| Inspect each district separately | Rising-district detection |
+| Track referral deadlines in spreadsheets | KVK SLA-risk alerting |
+| Visit every report in a suspected cluster | Representative mission batching |
+| Rebuild support packs manually | Privacy-masked KVK referral-pack generation |
+| Explain why an action was prioritised | Evidence line and disclosed forecast assumptions |
+
+The displayed time-avoidance value is a planning estimate, not a measured field-impact claim. Its per-task assumptions are visible directly in the dashboard.
 
 ## Direct fit to the official challenge
 
@@ -39,6 +60,18 @@ The command centre is designed to answer one government operating question: **wh
 | Hindi and Marwari/Mewari voice pathway | Real offline recorder; Hindi browser/Bhashini pathway when configured; regional recordings routed to human review without dialect-ASR claim |
 | Nearest KVK or input-support linkage | Act 4 nearest-KVK match, referral lifecycle, 48-hour SLA and privacy-masked evidence pack |
 | Feedback loop using local data | Act 3 expert-labelled learning record, model lifecycle and no automatic training/promotion |
+
+## Government and public-data role
+
+The prototype uses a clear adapter hierarchy rather than fabricated integrations:
+
+- IMD weather state contributes to outbreak context only when an official or cached source is identified;
+- data.gov.in / AGMARKNET provides market context for Rajasthan crop workflows when a valid key is available;
+- sourced KVK records drive nearest-support matching and SLA operations;
+- Bhashini provides backend-only Hindi ASR/TTS when configured;
+- AgriStack, Raj Kisan, RajSSO, Jan Aadhaar, Soil Health Card, NPSS, Sampark and e-Mitra remain versioned contracts until government authority is granted.
+
+Every adapter exposes a visible state such as live, cached, public-directory, credentials-required or awaiting authority.
 
 ## Deeper technical proof
 
@@ -68,7 +101,7 @@ npm run e2e:connected
 npm run e2e:subpath
 ```
 
-The last recorded full local baseline before this evaluator-experience refactor was 86 Vitest, 65 Pytest, 15 standard Playwright and 19 Pages-subpath Playwright tests. The refactor updates the affected Playwright selectors and must be rerun when the GitHub Actions account lock is removed.
+The last recorded full local baseline before this evaluator-experience refactor was 86 Vitest, 65 Pytest, 15 standard Playwright and 19 Pages-subpath Playwright tests. The release adds decision-intelligence unit coverage and must rerun the complete matrix on the final deployment commit.
 
 ## Claims the evaluator can verify directly
 
@@ -79,6 +112,8 @@ The last recorded full local baseline before this evaluator-experience refactor 
 | Honest provider identity, uncertainty and abstention | `apps/web/src/lib/edgeModel.ts`, `docs/MODEL_CARD.md` |
 | Expert-controlled consequential decisions | Expert desk, case timeline, review APIs |
 | Explainable outbreak scoring | Outbreak page and cluster breakdown |
+| Explainable 72-hour operations forecast | `apps/web/src/lib/decisionIntelligence.ts`, command centre and unit tests |
+| Manual-overload reduction | Ranked expert queue, mission batching, KVK pack automation and disclosed workload estimate |
 | Safe advisory invariants | API repository tests and locked chemical section |
 | Offline draft and idempotent sync | Field workflow, sync tests |
 | Sourced KVK routing and referral packs | Act 4, Support desk and KVK reference directory |
@@ -89,6 +124,8 @@ The last recorded full local baseline before this evaluator-experience refactor 
 
 - The current disease-pattern scorer is a transparent research heuristic with no measured field accuracy.
 - MobileNetV2 is used only for broad out-of-distribution screening.
+- The 72-hour forecast is an explainable pilot operational forecast, not a field-validated epidemiological model.
+- The operator-time avoidance value is an assumption-based planning estimate, not measured impact.
 - Marwari/Mewari voice recordings are supported, but dialect ASR is not claimed.
 - Farmer, field and outcome data in the repository are synthetic.
 - Demo RBAC and persistence are not production infrastructure.
