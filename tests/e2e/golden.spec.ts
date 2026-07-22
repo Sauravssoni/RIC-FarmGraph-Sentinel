@@ -23,12 +23,17 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
-test("golden loop via five-act evaluator proof (deterministic)", async ({ page }) => {
+test("golden loop proves official challenge fit end to end", async ({ page }) => {
   await expect(page.getByText("The complete proof in five acts.")).toBeVisible();
+  await expect(page.locator('section[aria-label="Official challenge coverage"]')).toContainText("Offline crop workflow");
+  await expect(page.locator('section[aria-label="Official challenge coverage"]')).toContainText("Hindi + regional voice");
+  await expect(page.locator('section[aria-label="Official challenge coverage"]')).toContainText("Nearest KVK linkage");
+  await expect(page.locator('section[aria-label="Official challenge coverage"]')).toContainText("Local learning loop");
   await expect(page.getByText("0 of 5 proof acts complete")).toBeVisible();
   expect(await liveState(page)).toContain("Draft");
   expect(await liveState(page)).toContain("65.5");
   expect(await liveState(page)).toContain("Suspected");
+  expect(await liveState(page)).toContain("Not prepared");
 
   await runAction(page, 1);
   await expect(page.getByText("1 of 5 proof acts complete")).toBeVisible();
@@ -40,12 +45,17 @@ test("golden loop via five-act evaluator proof (deterministic)", async ({ page }
 
   await runAction(page, 3);
   expect(await liveState(page)).toContain("Expert Confirmed");
+  expect(await liveState(page)).toContain("Learning records 1");
   expect(await liveState(page)).toContain("71.5");
   expect(await liveState(page)).toContain("Verified");
 
   await runAction(page, 4);
-  await expect(page.locator("section", { hasText: "Action log" })).toContainText(/Mission M-\d+/);
+  const actionLog = page.locator("section", { hasText: "Action log" });
+  await expect(actionLog).toContainText(/Mission M-\d+/);
+  await expect(actionLog).toContainText(/Referral REF-\d+/);
+  await expect(actionLog).toContainText(/READY TO SHARE/);
   expect(await liveState(page)).toContain("Advisory Issued");
+  expect(await liveState(page)).toContain("Ready To Share");
 
   await runAction(page, 5);
   expect(await liveState(page)).toContain("Improving");
@@ -56,6 +66,7 @@ test("golden loop via five-act evaluator proof (deterministic)", async ({ page }
   await expect(page.getByText("0 of 5 proof acts complete")).toBeVisible();
   expect(await liveState(page)).toContain("Draft");
   expect(await liveState(page)).toContain("65.5");
+  expect(await liveState(page)).toContain("Not prepared");
 });
 
 test("command centre renders executive metrics, risk map and provenance", async ({ page }) => {
