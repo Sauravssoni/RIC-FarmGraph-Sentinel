@@ -51,7 +51,7 @@ export default function CommandCentre() {
   const selectedCluster = data.clusters.find((c) => c.id === selectedClusterId) ?? topCluster;
   const openReferrals = data.referrals.filter((r) => !["CLOSED", "RESPONDED"].includes(r.status));
   const activeMissions = data.missions.filter((m) => m.status !== "COMPLETED");
-  const decisionLoad = data.overview.awaitingExpert + data.overview.pendingSync;
+  const activeClusterCount = data.clusters.filter((cluster) => cluster.status !== "DISMISSED").length;
   const latestCases = [...filtered].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 7);
   const o = data.overview;
 
@@ -89,8 +89,8 @@ export default function CommandCentre() {
 
       <section className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard title="Open field cases" label="Coverage" value={o.activeCases} sub="Every number drills into a traceable case." href="/cases?open=1" />
-        <KpiCard title="Items needing a decision" label="Attention" value={decisionLoad} sub={`${o.awaitingExpert} expert · ${o.pendingSync} awaiting sync`} href="/expert" tone="saffron" />
-        <KpiCard title="Active outbreak signals" label="Risk" value={o.suspectedClusters} sub="Suspected and verified clusters remain distinct." href="/outbreaks" tone="alert" />
+        <KpiCard title="Awaiting expert decision" label="Attention" value={o.awaitingExpert} sub="Structured agronomy review required." href="/expert" tone="saffron" />
+        <KpiCard title="Active outbreak signals" label="Risk" value={activeClusterCount} sub="Suspected and verified signals; dismissed clusters excluded." href="/outbreaks" tone="alert" />
         <KpiCard title="Follow-up completion" label="Response" value={`${o.followUpCompletionPct}%`} sub={`${o.resolvedOrImproving} cases improving or resolved`} href="/cases?state=RESOLVED" tone="leaf" />
       </section>
 
@@ -144,7 +144,7 @@ export default function CommandCentre() {
                     <h4 className="mt-1 text-base font-extrabold text-ink-950">{selectedCluster.name}</h4>
                   </div>
                   <span className={`chip ${selectedCluster.status === "VERIFIED" ? "border-alert-600/40 bg-alert-100 text-alert-700" : selectedCluster.status === "DISMISSED" ? "border-sand-300 bg-sand-100 text-ink-500" : "border-saffron-500/40 bg-saffron-100 text-saffron-700"}`}>
-                    {selectedCluster.status}
+                    {formatStatus(selectedCluster.status)}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -227,6 +227,14 @@ export default function CommandCentre() {
       </p>
     </div>
   );
+}
+
+function formatStatus(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function MiniMetric({ value, label }: { value: string | number; label: string }) {
