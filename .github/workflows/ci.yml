@@ -5,14 +5,18 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   web:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - name: Install
         run: npm ci
@@ -26,9 +30,12 @@ jobs:
         run: npm run test --workspace apps/web
       - name: Production build (static export)
         run: npm run build --workspace apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
 
   api:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,11 +48,12 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - name: Install
         run: npm ci
@@ -53,6 +61,8 @@ jobs:
         run: python3 data/demo/generate_seed.py
       - name: Build static export
         run: npm run build --workspace apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
       - name: Playwright e2e (golden + negative path + responsive)
@@ -62,11 +72,12 @@ jobs:
 
   connected-e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - uses: actions/setup-python@v5
         with:
@@ -84,16 +95,14 @@ jobs:
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
 
-  # Production-subpath proof: build with the GitHub Pages project-site base
-  # path, serve ONLY under /<repo>/, and run the full e2e suite plus
-  # base-path asset checks (manifest, sw.js, ONNX model, wasm, labels).
   e2e-subpath:
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - name: Install
         run: npm ci
@@ -106,16 +115,15 @@ jobs:
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
 
-  # Advisory dependency/secret scanning. Report-first until the final
-  # dependency remediation pass; results remain visible on every run.
   security-scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci
       - name: npm audit (high severity and above)
@@ -129,3 +137,32 @@ jobs:
           pip-audit -r apps/api/requirements.txt
       - name: gitleaks (secret scanning)
         uses: gitleaks/gitleaks-action@v2
+
+  release-gate:
+    name: release-gate
+    needs: [web, api, e2e, connected-e2e, e2e-subpath]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Verify mandatory gates
+        env:
+          WEB: ${{ needs.web.result }}
+          API: ${{ needs.api.result }}
+          E2E: ${{ needs.e2e.result }}
+          CONNECTED: ${{ needs.connected-e2e.result }}
+          SUBPATH: ${{ needs.e2e-subpath.result }}
+        run: |
+          printf '{\n  "commit": "%s",\n  "node": "24.x",\n  "web": "%s",\n  "api": "%s",\n  "e2e": "%s",\n  "connected_e2e": "%s",\n  "subpath_e2e": "%s"\n}\n' \
+            "$GITHUB_SHA" "$WEB" "$API" "$E2E" "$CONNECTED" "$SUBPATH" | tee release-gate.json
+          test "$WEB" = success
+          test "$API" = success
+          test "$E2E" = success
+          test "$CONNECTED" = success
+          test "$SUBPATH" = success
+      - name: Upload machine-readable release proof
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-${{ github.sha }}
+          path: release-gate.json
+          retention-days: 30
