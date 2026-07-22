@@ -74,4 +74,27 @@ describe("explainable decision intelligence", () => {
     expect(result.kvkSlaRisk24h).toBe(1);
     expect(result.actions[0]).toMatchObject({ id: "kvk-sla-risk", priority: "CRITICAL", href: "/support" });
   });
+
+  it("does not invent a rising-district recommendation when recent flow is flat", () => {
+    const { seed, clusters, queueLength, pendingSync } = fixture();
+    const now = Date.parse(seed.meta.demoNow);
+    const cases = seed.cases.map((item) => ({
+      ...item,
+      createdAt: new Date(now - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    }));
+
+    const result = buildDecisionIntelligence({
+      cases,
+      clusters,
+      missions: seed.missions,
+      referrals: seed.referrals,
+      demoNow: seed.meta.demoNow,
+      queueLength,
+      pendingSync,
+    });
+
+    expect(result.districtsTrendingUp).toBe(0);
+    expect(result.topRisingDistrict).toBeNull();
+    expect(result.actions.some((item) => item.id === "rising-district")).toBe(false);
+  });
 });
