@@ -46,6 +46,36 @@ jobs:
       - name: API tests (including Task 004 evidence continuity)
         run: cd apps/api && python3 -m pytest tests/ -q
 
+  model-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate deterministic evaluation report
+        run: |
+          python3 scripts/evaluate_model.py \
+            --input data/validation/model-contract-fixture.jsonl \
+            --output model-contract-report.json \
+            --split test \
+            --bootstrap 100
+      - name: Prove synthetic evidence cannot be promoted
+        run: |
+          python3 scripts/model_promotion_gate.py \
+            --report model-contract-report.json \
+            --output model-promotion-decision.json \
+            --expect-reject
+      - name: Upload model-governance proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-contract-${{ github.sha }}
+          path: |
+            model-contract-report.json
+            model-promotion-decision.json
+          retention-days: 30
+
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -140,7 +170,7 @@ jobs:
 
   release-gate:
     name: release-gate
-    needs: [web, api, e2e, connected-e2e, e2e-subpath]
+    needs: [web, api, model-contract, e2e, connected-e2e, e2e-subpath]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
@@ -148,14 +178,16 @@ jobs:
         env:
           WEB: ${{ needs.web.result }}
           API: ${{ needs.api.result }}
+          MODEL: ${{ needs['model-contract'].result }}
           E2E: ${{ needs.e2e.result }}
           CONNECTED: ${{ needs['connected-e2e'].result }}
           SUBPATH: ${{ needs['e2e-subpath'].result }}
         run: |
-          printf '{\n  "commit": "%s",\n  "node": "24.x",\n  "web": "%s",\n  "api": "%s",\n  "e2e": "%s",\n  "connected_e2e": "%s",\n  "subpath_e2e": "%s"\n}\n' \
-            "$GITHUB_SHA" "$WEB" "$API" "$E2E" "$CONNECTED" "$SUBPATH" | tee release-gate.json
+          printf '{\n  "commit": "%s",\n  "node": "24.x",\n  "web": "%s",\n  "api": "%s",\n  "model_contract": "%s",\n  "e2e": "%s",\n  "connected_e2e": "%s",\n  "subpath_e2e": "%s"\n}\n' \
+            "$GITHUB_SHA" "$WEB" "$API" "$MODEL" "$E2E" "$CONNECTED" "$SUBPATH" | tee release-gate.json
           test "$WEB" = success
           test "$API" = success
+          test "$MODEL" = success
           test "$E2E" = success
           test "$CONNECTED" = success
           test "$SUBPATH" = success

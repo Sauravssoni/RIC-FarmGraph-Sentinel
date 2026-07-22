@@ -67,3 +67,15 @@ consumed only by a reviewed, versioned model-update cycle.
 Blurred/dark frames, non-plant frames, corrupt files, duplicate evidence,
 patterns outside a crop's support set — all rejected or abstained; see the
 Judge Mode negative path (9 live checks) and `apps/api/tests/test_api_phase2.py`.
+
+## 7. Executable field-evaluation and promotion gate
+
+`docs/MODEL_EVALUATION_PROTOCOL.md` defines the locked dataset contract and
+promotion thresholds. `scripts/evaluate_model.py` calculates leakage-safe
+end-to-end metrics, calibration, abstention, subgroup results and bootstrap
+confidence intervals. `scripts/model_promotion_gate.py` prevents promotion
+unless field provenance, support, performance, calibration, coverage and
+district-stability gates all pass.
+
+The CI fixture is intentionally synthetic. CI must prove that it is rejected
+from promotion; its metrics are never a model-accuracy claim.
