@@ -27,7 +27,7 @@ const ACTS: ProofAct[] = [
   {
     number: "01",
     title: "See the operational picture",
-    outcome: "Begin at the command centre: statewide risk, expert decisions, outbreak signals and field response are visible in one screen.",
+    outcome: "Begin at the command centre: pilot-district risk, expert decisions, outbreak signals and field response are visible in one screen.",
     judges: "This is not a dashboard of vanity metrics. Every number leads to a case, cluster, mission or outcome.",
     link: { href: "/command-centre", label: "Open command centre" },
   },
@@ -194,7 +194,7 @@ export default function DemoController() {
             </div>
             <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-white sm:text-4xl">The complete proof in five acts.</h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-400">
-              Statewide risk → field evidence → expert verification → coordinated response → measured outcome. One primary action per act; deeper technical proof stays secondary.
+              Pilot-district risk → field evidence → expert verification → coordinated response → measured outcome. One primary action per act; deeper technical proof stays secondary.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
