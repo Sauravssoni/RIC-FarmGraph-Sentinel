@@ -47,6 +47,7 @@ export interface DecisionIntelligence {
   districtsTrendingUp: number;
   topRisingDistrict: RisingDistrict | null;
   kvkSlaRisk24h: number;
+  kvkOverdue: number;
   estimatedMinutesAvoided: number;
   signalTrend: SignalTrendPoint[];
   actions: RecommendedAction[];
@@ -80,6 +81,31 @@ function countCreatedBetween(cases: Case[], startMs: number, endMs: number): num
   }).length;
 }
 
+function latestOperationalTime(input: DecisionIntelligenceInput): number {
+  const values: Array<string | null | undefined> = [input.demoNow];
+
+  for (const item of input.cases) {
+    values.push(item.createdAt, item.updatedAt, item.outcome?.updatedAt);
+    values.push(...item.observations.map((entry) => entry.at));
+    values.push(...item.reviews.map((entry) => entry.at));
+    values.push(...item.followUps.map((entry) => entry.at));
+    values.push(...item.timeline.map((entry) => entry.at));
+  }
+  for (const mission of input.missions) {
+    values.push(mission.createdAt, mission.completedAt);
+    values.push(...mission.visits.map((entry) => entry.at));
+  }
+  for (const referral of input.referrals) {
+    values.push(referral.createdAt);
+    values.push(...referral.statusHistory.map((entry) => entry.at));
+  }
+
+  const timestamps = values
+    .map((value) => value ? Date.parse(value) : Number.NaN)
+    .filter(Number.isFinite);
+  return timestamps.length ? Math.max(...timestamps) : Date.now();
+}
+
 function dominantDistrict(cluster: ClusterWithScore, casesById: Map<string, Case>): string | null {
   const counts = new Map<string, number>();
   for (const caseId of cluster.memberCaseIds) {
@@ -96,8 +122,7 @@ function actionPriority(score: number): DecisionPriority {
 }
 
 export function buildDecisionIntelligence(input: DecisionIntelligenceInput): DecisionIntelligence {
-  const now = Date.parse(input.demoNow);
-  const safeNow = Number.isFinite(now) ? now : Date.now();
+  const safeNow = latestOperationalTime(input);
   const openCases = input.cases.filter((item) => !CLOSED_CASE_STATES.has(item.state));
   const awaitingExpert = openCases.filter((item) => EXPERT_STATES.has(item.state) || item.diagnosis?.routing.decision === "expert");
   const activeClusters = input.clusters.filter((item) => item.status !== "DISMISSED");
@@ -158,9 +183,13 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
   const risingDistricts = districtRows.filter((item) => item.delta > 0);
   const topRisingDistrict = risingDistricts[0] ?? null;
 
+  const kvkOverdue = openReferrals.filter((item) => {
+    const due = Date.parse(item.dueAt);
+    return Number.isFinite(due) && due <= safeNow;
+  }).length;
   const kvkSlaRisk24h = openReferrals.filter((item) => {
     const due = Date.parse(item.dueAt);
-    return Number.isFinite(due) && due <= safeNow + 24 * HOUR_MS;
+    return Number.isFinite(due) && due > safeNow && due <= safeNow + 24 * HOUR_MS;
   }).length;
 
   const recaptureOrDuplicate = input.cases.filter((item) => item.state === "NEEDS_RECAPTURE" || item.state === "CLOSED_DUPLICATE").length;
@@ -179,6 +208,18 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
   const topCluster = [...activeClusters].sort((a, b) => b.score.score - a.score.score)[0];
   const topClusterDistrict = topCluster ? dominantDistrict(topCluster, casesById) : null;
   const candidates: Array<RecommendedAction & { score: number }> = [];
+
+  if (kvkOverdue > 0) {
+    candidates.push({
+      id: "kvk-overdue",
+      score: 120 + kvkOverdue,
+      priority: "CRITICAL",
+      title: `Recover ${kvkOverdue} overdue KVK referral${kvkOverdue === 1 ? "" : "s"}`,
+      detail: "Escalate, reassign or record an updated response state immediately.",
+      evidence: `${openReferrals.length} open referrals · ${kvkOverdue} already beyond SLA`,
+      href: "/support",
+    });
+  }
 
   if (kvkSlaRisk24h > 0) {
     candidates.push({
@@ -262,10 +303,12 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
     districtsTrendingUp: risingDistricts.length,
     topRisingDistrict,
     kvkSlaRisk24h,
+    kvkOverdue,
     estimatedMinutesAvoided,
     signalTrend: [...observed, ...forecast],
     actions,
     assumptions: [
+      "Forecast windows advance with the latest case, review, follow-up, mission or referral event, so new interactive activity is included.",
       "Forecast uses the last three observed days, open-case baseline, active-cluster temporal growth and the cluster weather-suitability signal. Weather remains labelled by its live, cached or simulated adapter state.",
       "Expert-load forecast adds the current ranked queue to the expected share of new reports needing structured review.",
       "Operator-time avoidance is an explicit planning estimate: queue ranking 5 min/case, evidence/duplicate checks 4 min/case, cluster synthesis 10 min/cluster, KVK pack preparation 8 min/referral and 12 min per batched mission stop.",
