@@ -6,6 +6,7 @@ import { DemoBanner } from "@/components/bits";
 import GovInfraPath from "@/components/GovInfraPath";
 import NegativePath from "@/components/NegativePath";
 import { apiDemoReset } from "@/lib/httpProvider";
+import { nearestKvks } from "@/lib/kvk";
 import { getStore, useDemoStore } from "@/lib/store";
 
 const GOLDEN = "C-2614";
@@ -33,31 +34,31 @@ const ACTS: ProofAct[] = [
   },
   {
     number: "02",
-    title: "Prove evidence quality before AI",
-    outcome: "Run one proof to reject a poor capture, guide recapture, restore connectivity and route the usable report through honest triage.",
-    judges: "Weak evidence is refused with specific guidance. Offline work survives, sync is explicit and uncertainty remains visible.",
-    link: { href: "/field/scan", label: "Try real field capture" },
+    title: "Prove offline evidence before AI",
+    outcome: "Reject a poor capture, guide recapture, restore connectivity and route the usable report through honest triage. The real field route also retains image and voice evidence offline.",
+    judges: "Weak evidence is refused with specific guidance. Offline work survives, sync is explicit and uncertainty remains visible. Hindi voice is supported where configured; regional speech remains human-reviewed.",
+    link: { href: "/field/scan", label: "Try real image + voice capture" },
   },
   {
     number: "03",
     title: "Put the expert in control",
-    outcome: "A structured expert decision confirms the suspected condition and strengthens the nearby outbreak signal.",
-    judges: "The system supports confirm, correct, unknown, recapture and field visit. AI never silently becomes an agronomic decision.",
+    outcome: "A structured expert decision confirms the suspected condition, creates a governed learning record and strengthens the nearby outbreak signal.",
+    judges: "The system supports confirm, correct, unknown, recapture and field visit. AI never silently becomes an agronomic decision, and no model retrains itself.",
     link: { href: "/expert", label: "Open expert desk" },
   },
   {
     number: "04",
-    title: "Coordinate the field response",
-    outcome: "Generate a representative verification mission and issue only the approved, versioned non-chemical advisory.",
-    judges: "The outbreak score is explainable, the visit order is reproducible and the chemical section remains locked by policy.",
-    link: { href: "/outbreaks", label: "Open outbreak response" },
+    title: "Coordinate mission, KVK and advisory",
+    outcome: "Generate a representative field mission, prepare a referral for the nearest sourced KVK and issue only the approved, versioned non-chemical advisory.",
+    judges: "The visit order is reproducible, the KVK pack is privacy-masked and READY TO SHARE rather than falsely marked delivered, and chemical guidance remains locked.",
+    link: { href: "/support", label: "Open KVK support desk" },
   },
   {
     number: "05",
     title: "Close the loop and learn safely",
-    outcome: "Record farmer improvement, preserve the audit chain and create governed learning evidence without automatic retraining.",
+    outcome: "Record farmer improvement, preserve the audit chain and retain expert-labelled local evidence for a future evaluated model cycle.",
     judges: "The product measures what happened after advice. Corrections become reviewable learning records, not uncontrolled model updates.",
-    link: { href: "/governance", label: "Open governance evidence" },
+    link: { href: "/learning", label: "Open learning evidence" },
   },
 ];
 
@@ -70,21 +71,27 @@ export default function DemoController() {
   const golden = useDemoStore((s) => s.getState().cases.find((c) => c.id === GOLDEN));
   const cluster = useDemoStore((s) => s.clustersWithScores().find((c) => c.id === CLUSTER));
   const missions = useDemoStore((s) => s.getState().missions);
+  const referrals = useDemoStore((s) => s.getState().referrals);
+  const learningRecords = useDemoStore((s) => s.getState().learningRecords);
 
   const currentGolden = () => store.getState().cases.find((c) => c.id === GOLDEN);
   const say = (message: string) => setLog((items) => [...items, message]);
+  const referral = referrals.find((item) => item.caseId === GOLDEN);
+  const caseLearningRecords = learningRecords.filter((item) => item.caseId === GOLDEN);
 
   const done = useMemo(() => {
     if (!golden) return [overviewSeen, false, false, false, false];
     const hasMission = missions.some((m) => m.clusterId === CLUSTER);
+    const hasReferral = referrals.some((item) => item.caseId === GOLDEN);
+    const hasLearningRecord = learningRecords.some((item) => item.caseId === GOLDEN);
     return [
       overviewSeen,
       golden.observations.some((o) => !o.quality.passed) && golden.observations.some((o) => o.quality.passed) && golden.diagnosis !== null,
-      golden.reviews.some((r) => r.decision === "confirm"),
-      hasMission && golden.advisoryRef !== null,
-      golden.followUps.length > 0,
+      golden.reviews.some((r) => r.decision === "confirm") && hasLearningRecord,
+      hasMission && hasReferral && golden.advisoryRef !== null,
+      golden.followUps.length > 0 && hasLearningRecord,
     ];
-  }, [golden, missions, overviewSeen]);
+  }, [golden, learningRecords, missions, overviewSeen, referrals]);
 
   const beginProof = () => {
     if (overviewSeen) return;
@@ -133,16 +140,31 @@ export default function DemoController() {
       conditionId: "downy_mildew",
       note: "Lower-leaf sporulation evidence consistent; pattern matches cluster cases.",
     });
-    say("Expert confirmation recorded → case verified → cluster score strengthened.");
+    say("Expert confirmation recorded → learning record created → cluster score strengthened.");
   };
 
   const runResponseProof = () => {
     const current = currentGolden();
     if (!current) return;
 
-    if (!missions.some((m) => m.clusterId === CLUSTER)) {
+    if (!store.getState().missions.some((m) => m.clusterId === CLUSTER && m.status !== "COMPLETED")) {
       const mission = store.generateMission(CLUSTER);
       say("error" in mission ? mission.error : `Mission ${mission.id} created: ${mission.routeOrder.join(" → ")}.`);
+    }
+
+    if (!store.getState().referrals.some((item) => item.caseId === GOLDEN)) {
+      const nearest = nearestKvks(current.lat, current.lon, current.district, 1)[0];
+      if (nearest) {
+        const created = store.createReferral(GOLDEN, {
+          kvkId: nearest.id,
+          reason: "Expert-confirmed high-spread-risk crop-health signal",
+          note: "Privacy-masked evidence pack prepared for agronomy review; external delivery is not automated in this demo.",
+          urgency: "PRIORITY",
+        });
+        if (created) {
+          say(`Referral ${created.id} prepared for ${nearest.name} (${nearest.distanceKm} km estimated) → READY TO SHARE; delivery not claimed.`);
+        }
+      }
     }
 
     const refreshed = currentGolden();
@@ -162,11 +184,11 @@ export default function DemoController() {
     say("Five-day follow-up recorded → improving → outcome and audit trail updated.");
   };
 
-  const actions: Array<null | { label: string; run: () => void }> = [
+  const actions: Array<{ label: string; run: () => void }> = [
     { label: "Begin evaluator proof", run: beginProof },
     { label: "Run evidence-quality proof", run: runEvidenceProof },
     { label: "Record expert verification", run: runExpertProof },
-    { label: "Launch field response", run: runResponseProof },
+    { label: "Launch field + KVK response", run: runResponseProof },
     { label: "Record measured outcome", run: runOutcomeProof },
   ];
 
@@ -194,7 +216,7 @@ export default function DemoController() {
             </div>
             <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-white sm:text-4xl">The complete proof in five acts.</h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-400">
-              Pilot-district risk → field evidence → expert verification → coordinated response → measured outcome. One primary action per act; deeper technical proof stays secondary.
+              Pilot-district risk → offline evidence → expert verification → mission and KVK response → measured outcome. One primary action per act; deeper technical proof stays secondary.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -206,6 +228,15 @@ export default function DemoController() {
       </section>
 
       <div className="mt-3"><DemoBanner /></div>
+
+      <section className="mt-3 overflow-hidden rounded-2xl border border-sand-200 bg-sand-200" aria-label="Official challenge coverage">
+        <div className="grid gap-px sm:grid-cols-2 xl:grid-cols-4">
+          <ChallengeFit title="Offline crop workflow" detail="Bajra · mustard · guar · cumin; conservative research screening" />
+          <ChallengeFit title="Hindi + regional voice" detail="Real recorder; Hindi ASR when configured; dialect notes human-reviewed" href="/field/scan" />
+          <ChallengeFit title="Nearest KVK linkage" detail="Sourced directory, distance match, SLA and evidence pack in Act 4" />
+          <ChallengeFit title="Local learning loop" detail="Expert-labelled records; evaluated promotion only, never auto-training" />
+        </div>
+      </section>
 
       <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Demo mode">
         <button type="button" role="tab" aria-selected={mode === "golden"} onClick={() => setMode("golden")} className={`btn-secondary ${mode === "golden" ? "!border-ink-900 !bg-ink-900 !text-white" : ""}`}>Primary evaluator proof</button>
@@ -275,11 +306,9 @@ export default function DemoController() {
                     </div>
 
                     <div className="mt-6 flex flex-wrap gap-3">
-                      {action && (
-                        <button type="button" className="btn-green" onClick={action.run} disabled={done[act]}>
-                          {done[act] ? "Proof completed" : action.label} →
-                        </button>
-                      )}
+                      <button type="button" className="btn-green" onClick={action.run} disabled={done[act]}>
+                        {done[act] ? "Proof completed" : action.label} →
+                      </button>
                       {currentAct.link && <Link href={currentAct.link.href} className="btn-primary">{currentAct.link.label}</Link>}
                       {nextIncomplete >= 0 && nextIncomplete !== act && (
                         <button type="button" className="btn-secondary" onClick={() => setAct(nextIncomplete)}>Go to next incomplete act</button>
@@ -295,6 +324,8 @@ export default function DemoController() {
                         <LiveStateRow label="Case state" value={humanState(golden.state)} technical={golden.state} />
                         <LiveStateRow label="Observations" value={golden.observations.length} />
                         <LiveStateRow label="Expert reviews" value={golden.reviews.length} />
+                        <LiveStateRow label="Learning records" value={caseLearningRecords.length} />
+                        <LiveStateRow label="KVK referral" value={referral ? humanState(referral.status) : "Not prepared"} technical={referral?.status} />
                         <LiveStateRow label="Follow-ups" value={golden.followUps.length} />
                         <LiveStateRow label="Cluster score" value={cluster?.score.score ?? "—"} />
                         <LiveStateRow label="Cluster status" value={humanState(cluster?.status ?? "—")} technical={cluster?.status} />
@@ -328,6 +359,16 @@ export default function DemoController() {
       )}
     </div>
   );
+}
+
+function ChallengeFit({ title, detail, href }: { title: string; detail: string; href?: string }) {
+  const content = (
+    <div className="h-full bg-white px-3 py-3.5">
+      <p className="text-xs font-extrabold text-ink-950">✓ {title}</p>
+      <p className="mt-1 text-[11px] leading-5 text-ink-500">{detail}</p>
+    </div>
+  );
+  return href ? <Link href={href} className="block h-full hover:bg-sand-50">{content}</Link> : content;
 }
 
 function ProofBadge({ value }: { value: string }) {
