@@ -156,7 +156,7 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
     };
   }).sort((a, b) => b.delta - a.delta || b.awaitingExpert - a.awaitingExpert || b.openCases - a.openCases);
   const risingDistricts = districtRows.filter((item) => item.delta > 0);
-  const topRisingDistrict = risingDistricts[0] ?? districtRows[0] ?? null;
+  const topRisingDistrict = risingDistricts[0] ?? null;
 
   const kvkSlaRisk24h = openReferrals.filter((item) => {
     const due = Date.parse(item.dueAt);
@@ -193,7 +193,7 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
   }
 
   if (topRisingDistrict) {
-    const score = 70 + Math.max(0, topRisingDistrict.delta) * 4 + topRisingDistrict.awaitingExpert * 2;
+    const score = 70 + topRisingDistrict.delta * 4 + topRisingDistrict.awaitingExpert * 2;
     candidates.push({
       id: "rising-district",
       score,
