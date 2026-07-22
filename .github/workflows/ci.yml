@@ -95,10 +95,20 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
-      - name: Playwright e2e (golden + negative path + responsive)
+      - name: Playwright e2e (golden + negative + responsive + Pixel offline PWA)
         run: npm run e2e
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
+      - name: Upload browser and mobile evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-root-${{ github.sha }}
+          path: |
+            tests/e2e/test-results
+            tests/e2e/playwright-report
+          if-no-files-found: warn
+          retention-days: 30
 
   connected-e2e:
     runs-on: ubuntu-latest
@@ -144,6 +154,16 @@ jobs:
         run: npm run e2e:subpath
         env:
           PLAYWRIGHT_NO_EXECUTABLE_PATH: "1"
+      - name: Upload subpath browser and mobile evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-subpath-${{ github.sha }}
+          path: |
+            tests/e2e/test-results
+            tests/e2e/playwright-report
+          if-no-files-found: warn
+          retention-days: 30
 
   security-scan:
     runs-on: ubuntu-latest
