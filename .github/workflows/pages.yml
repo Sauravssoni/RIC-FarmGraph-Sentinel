@@ -1,9 +1,7 @@
 name: github-pages
 
-# Builds the web static export and deploys it to GitHub Pages.
-# Honest label: this publishes the SAME demo build reviewers run locally —
-# simulated data, no secrets, no backend. The API is NOT deployed by this
-# workflow (render.yaml covers a demo API deploy).
+# Builds the same static export used by evaluators and deploys it to GitHub Pages.
+# Simulated data and unavailable integrations remain explicitly labelled.
 
 on:
   push:
@@ -12,12 +10,19 @@ on:
       - "apps/web/**"
       - "packages/**"
       - "data/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".npmrc"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
+  contents: read
   pages: write
   id-token: write
+
+environment:
+  name: github-pages
 
 concurrency:
   group: pages
@@ -26,25 +31,30 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
-      - name: Install
+      - name: Install locked dependencies
         run: npm ci
       - name: Regenerate deterministic seed
         run: python3 data/demo/generate_seed.py
-      - name: Build static export (project-site base path)
+      - name: Lint
+        run: npm run lint --workspace apps/web
+      - name: Typecheck
+        run: npm run typecheck --workspace apps/web
+      - name: Unit tests
+        run: npm run test --workspace apps/web
+      - name: Build static export under project base path
         run: npm run build --workspace apps/web
         env:
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
-          # Deployed API URL for "connected" mode. Set the repo variable
-          # NEXT_PUBLIC_API_URL (Settings → Secrets and variables → Actions →
-          # Variables) once the Render service from render.yaml exists.
-          # Empty → frontend honestly shows STANDALONE DETERMINISTIC DEMO.
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_TELEMETRY_DISABLED: "1"
+      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out
@@ -52,6 +62,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
