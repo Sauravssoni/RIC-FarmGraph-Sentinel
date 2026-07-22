@@ -4,19 +4,19 @@
 
 > **Every field seen. Every outbreak contained.**
 
-FarmGraph Rakshak is a government-grade working prototype for the Rajasthan Innovation Challenge problem **“AI-Based Crop Disease & Pest Detection for Smallholder Farmers.”** It connects offline field evidence, image-quality controls, honest edge screening, expert verification, Farm Digital Twins, outbreak intelligence, KVK referrals, governed advisories and auditable follow-up.
+FarmGraph Rakshak is a government-grade working prototype for the Rajasthan Innovation Challenge problem **“AI-Based Crop Disease & Pest Detection for Smallholder Farmers.”** It connects offline field evidence, image-quality controls, conservative edge screening, expert verification, Farm Digital Twins, outbreak intelligence, KVK referrals, governed advisories and auditable follow-up.
 
 **Applicant:** Syntheon Technology Private Limited  
 **DPIIT recognition:** DIPP213187  
-**Release branch:** `kimi/farmgraph-winning-release`  
-**Final-release PR:** [#1](https://github.com/Sauravssoni/RIC-FarmGraph-Sentinel/pull/1)
+**Release branch:** `main`  
+**Submission evidence index:** [`submission/FINAL_RELEASE_GATE.md`](submission/FINAL_RELEASE_GATE.md)
 
 ## Evaluator entry points
 
 | Experience | Route | Purpose |
 |---|---|---|
-| Government Command Centre | `/command-centre/` | Operational morning view, cases, outbreaks, missions and SLA signals |
-| Judge Mode | `/demo/` | Deterministic golden path, adversarial checks and government-infrastructure assurance |
+| Government Command Centre | `/command-centre/` | Map-first operational view, priority cases, outbreak signals, missions and SLA state |
+| Judge Mode | `/demo/` | Five-act, resettable proof covering offline workflow, expert review, local learning and KVK response |
 | Connected Evidence Proof | `/release-proof/` | Real image + voice evidence through FastAPI into a KVK referral pack |
 | Farm Digital Twins | `/digital-twins/` | Plot-level crop, evidence, risk, referral and government-data context |
 | KVK Support | `/support/` | Sourced directory, nearest-KVK matching, SLA lifecycle and evidence packs |
@@ -33,6 +33,8 @@ FarmGraph Rakshak is a government-grade working prototype for the Rajasthan Inno
 - Explicit recapture instructions rather than forcing a diagnosis from unusable evidence.
 - Offline draft and outbox behaviour with idempotent connected sync.
 - Real voice-note recording, playback and on-device retention.
+- Production service worker and base-path-safe PWA manifest.
+- Pixel 7 browser-device proof covering service-worker control and hard offline reload.
 
 ### Honest edge intelligence
 
@@ -41,6 +43,8 @@ FarmGraph Rakshak is a government-grade working prototype for the Rajasthan Inno
 - Provider identity, model version, runtime, duration, uncertainty and abstention reasons on evidence records.
 - No score is called accuracy.
 - Expert confirmation remains mandatory for consequential action.
+- Executable leakage-safe field-evaluation and model-promotion contracts.
+- Synthetic fixtures are programmatically prevented from becoming accuracy claims or promoted models.
 
 ### Government operating workflow
 
@@ -59,9 +63,18 @@ FarmGraph Rakshak is a government-grade working prototype for the Rajasthan Inno
 - **data.gov.in / AGMARKNET:** Rajasthan commodity aliases and live/cached/key-required states for bajra, mustard, guar and cumin market context.
 - **AgriStack, UFSI, Raj Kisan, RajSSO, Jan Aadhaar, e-Dharti/ULPIN, Soil Health Card, NPSS, Rajasthan Sampark and e-Mitra:** versioned adapter contracts with consent, minimum fields, fallbacks and authority dependencies. They are not presented as live connections.
 
-## Task 004 connected evidence proof
+## Official challenge fit
 
-`/release-proof/` closes the last important continuity gap:
+The primary `/demo/` screen visibly covers all four challenge expectations without requiring an evaluator to tour the product:
+
+1. offline crop-health workflow for bajra, mustard, guar and cumin;
+2. Hindi voice path plus honest human review for Marwari/Mewari recordings;
+3. nearest sourced KVK linkage and privacy-masked referral pack;
+4. governed expert-labelled local-learning loop without automatic retraining.
+
+## Connected evidence proof
+
+`/release-proof/` demonstrates:
 
 ```text
 consented image + real voice note
@@ -91,6 +104,7 @@ The handoff is idempotent and rejects missing/mismatched consent, unsupported ev
 - KVK contact data comes from public institutional directories; external delivery is not automated.
 - Demo RBAC uses `X-Demo-Role`; production must use RajSSO/authority-managed identity.
 - SQLite/in-memory persistence is demonstration-grade, not production infrastructure.
+- Automated Pixel-class offline proof is implemented; physical Android field sign-off remains a separate evidence gate.
 
 ## Run locally
 
@@ -118,7 +132,7 @@ One-command Docker demonstration:
 docker compose up --build
 ```
 
-## Quality gates
+## Quality and release gates
 
 ```bash
 npm run lint
@@ -129,23 +143,39 @@ npm run build
 npm run e2e
 npm run e2e:connected
 npm run e2e:subpath
+
+python3 scripts/evaluate_model.py \
+  --input data/validation/model-contract-fixture.jsonl \
+  --output model-contract-report.json \
+  --split test
+
+python3 scripts/model_promotion_gate.py \
+  --report model-contract-report.json \
+  --output model-promotion-decision.json \
+  --expect-reject
 ```
 
-Recorded pre-Task-004 local baseline from the release branch:
+Last recorded full local baseline before the latest evaluator and mobile hardening:
 
 - 86 Vitest tests passed.
 - 65 Pytest tests passed.
 - 15 standard Playwright tests passed.
 - 19 GitHub Pages subpath Playwright tests passed.
-- Strict TypeScript, ESLint and 73-page static export passed.
+- Strict TypeScript, ESLint and a 73-page static export passed.
 
-Task 004 adds three API evidence-continuity tests and one browser-to-FastAPI connected E2E gate. GitHub Actions is currently prevented from starting jobs by an account-level billing lock; this is recorded as an external release blocker rather than represented as a code pass.
+The current CI contract additionally includes connected evidence continuity, model-evaluation rejection, Pixel 7 hard-offline PWA proof and machine-readable release artifacts. GitHub currently creates all jobs but terminates them before the first step because of an account/repository runner-execution restriction. This is recorded as an external release blocker, not represented as a code pass.
 
 ## Deployment
 
 ### Vercel frontend
 
-The Vercel project may use `apps/web` as its root. `apps/web/vercel.json` deliberately installs and builds from the monorepo root so workspace packages and `data/` remain available.
+The project uses Vercel’s native npm-workspace/Next.js handling with `apps/web` as Root Directory. Runtime is pinned to Node 24.x; legacy lockfile registry hosts are normalized to the public npm registry. The latest repository-level TypeScript build defect was fixed in `release-proof/page.tsx`.
+
+Vercel currently rejects new builds at the account level with `upgradeToPro=build-rate-limit`. That status is a hosting quota failure, not a source compilation result.
+
+### GitHub Pages fallback
+
+The Pages workflow builds the same static export under the repository base path and runs lint, strict typecheck and unit tests before publishing. ONNX, WASM, manifest, service worker and offline caches are base-path-aware. Pages cannot publish until GitHub runner execution is unlocked.
 
 ### Render connected stack
 
@@ -161,33 +191,33 @@ After creating the services:
 3. Keep `FGR_PERSIST=memory` visibly labelled on free-tier hosting, or attach persistent infrastructure.
 4. Add Bhashini/data.gov.in/IMD values only through the API host’s secret manager.
 
-### GitHub Pages
-
-The Pages workflow builds with the repository base path. ONNX, WASM, manifest, service worker and offline caches are base-path-aware. Pages publishes only after merge to `main` and requires GitHub Actions to be unlocked.
-
 ## Repository map
 
 ```text
-apps/web                 Next.js 15 static-export PWA
-apps/api                 FastAPI connected demo backend
-packages/contracts       Shared TypeScript domain contracts
-data/demo                 Deterministic synthetic pilot dataset
-data/reference            KVK, government and public-data evidence artefacts
-data/models               Transparent research model configuration
-submission                Final application and evaluator package
-docs                      Architecture, safety, model, data and pilot evidence
-tests/e2e                 Static, subpath and connected Playwright gates
+apps/web                  Next.js static-export PWA
+apps/api                  FastAPI connected demo backend
+packages/contracts        Shared TypeScript domain contracts
+data/demo                  Deterministic synthetic pilot dataset
+data/reference             KVK, government and public-data evidence artefacts
+data/models                Transparent research model configuration
+data/validation            Evaluation-contract fixtures
+scripts                    Model evaluation and promotion gates
+submission                 Final application and evaluator package
+docs                       Architecture, safety, model, data and pilot evidence
+tests/e2e                  Static, subpath, mobile-offline and connected gates
 ```
 
 ## Core documentation
 
+- [`submission/FINAL_RELEASE_GATE.md`](submission/FINAL_RELEASE_GATE.md)
 - [`docs/EVALUATOR_GUIDE.md`](docs/EVALUATOR_GUIDE.md)
 - [`docs/LIVE_DEMO.md`](docs/LIVE_DEMO.md)
 - [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md)
+- [`docs/MODEL_EVALUATION_PROTOCOL.md`](docs/MODEL_EVALUATION_PROTOCOL.md)
+- [`docs/MOBILE_FIELD_VALIDATION.md`](docs/MOBILE_FIELD_VALIDATION.md)
 - [`docs/DATA_CARD.md`](docs/DATA_CARD.md)
 - [`docs/RESPONSIBLE_AI.md`](docs/RESPONSIBLE_AI.md)
 - [`docs/government-integration-matrix.md`](docs/government-integration-matrix.md)
 - [`docs/90-day-pilot.md`](docs/90-day-pilot.md)
-- [`docs/release/TASK004_STATUS.md`](docs/release/TASK004_STATUS.md)
 
 FarmGraph Rakshak is designed to complement Raj Kisan, AgriStack, NPSS, KVKs and Rajasthan’s existing service-delivery infrastructure—not replace them.
