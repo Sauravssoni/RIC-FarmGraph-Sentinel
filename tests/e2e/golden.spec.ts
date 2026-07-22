@@ -25,31 +25,36 @@ test.beforeEach(async ({ page }) => {
 
 test("golden loop via five-act evaluator proof (deterministic)", async ({ page }) => {
   await expect(page.getByText("The complete proof in five acts.")).toBeVisible();
-  expect(await liveState(page)).toContain("DRAFT");
+  await expect(page.getByText("0 of 5 proof acts complete")).toBeVisible();
+  expect(await liveState(page)).toContain("Draft");
   expect(await liveState(page)).toContain("65.5");
-  expect(await liveState(page)).toContain("SUSPECTED");
+  expect(await liveState(page)).toContain("Suspected");
+
+  await runAction(page, 1);
+  await expect(page.getByText("1 of 5 proof acts complete")).toBeVisible();
 
   await runAction(page, 2);
-  expect(await liveState(page)).toContain("AWAITING_EXPERT");
+  expect(await liveState(page)).toContain("Awaiting Expert");
   await expect(page.getByText(/downy_mildew 0\.62/)).toBeVisible();
   await expect(page.getByText(/nutrient_n 0\.27/)).toBeVisible();
 
   await runAction(page, 3);
-  expect(await liveState(page)).toContain("EXPERT_CONFIRMED");
+  expect(await liveState(page)).toContain("Expert Confirmed");
   expect(await liveState(page)).toContain("71.5");
-  expect(await liveState(page)).toContain("VERIFIED");
+  expect(await liveState(page)).toContain("Verified");
 
   await runAction(page, 4);
   await expect(page.locator("section", { hasText: "Action log" })).toContainText(/Mission M-\d+/);
-  expect(await liveState(page)).toContain("ADVISORY_ISSUED");
+  expect(await liveState(page)).toContain("Advisory Issued");
 
   await runAction(page, 5);
-  expect(await liveState(page)).toContain("IMPROVING");
+  expect(await liveState(page)).toContain("Improving");
 
   await expect(page.getByText("5 of 5 proof acts complete")).toBeVisible();
 
   await page.getByRole("button", { name: /Reset proof/ }).click();
-  expect(await liveState(page)).toContain("DRAFT");
+  await expect(page.getByText("0 of 5 proof acts complete")).toBeVisible();
+  expect(await liveState(page)).toContain("Draft");
   expect(await liveState(page)).toContain("65.5");
 });
 
@@ -79,7 +84,7 @@ test.describe("responsive smoke", () => {
   for (const width of [1440, 1024, 768, 390]) {
     test(`no horizontal overflow at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
-      for (const route of ["command-centre/", "field/scan/", "cases/", "outbreaks/"]) {
+      for (const route of ["command-centre/", "demo/", "field/scan/", "cases/", "outbreaks/"]) {
         await page.goto(route);
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
