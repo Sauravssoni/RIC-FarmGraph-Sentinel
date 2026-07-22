@@ -6,13 +6,13 @@ FarmGraph Rakshak is an offline-first crop-health and outbreak-response prototyp
 
 ### Recommended path: five proof acts in three minutes
 
-Open `/demo/` and stay on **Primary evaluator proof**.
+Open `/demo/` and stay on **Primary evaluator proof**. The challenge-coverage ribbon maps the product directly to Rajasthan’s four requested features.
 
 1. **See the operational picture** — open the command centre and identify the highest-priority field, cluster and decision queue.
-2. **Prove evidence quality before AI** — one action rejects a weak capture, guides recapture, restores sync and routes the usable report through honest triage.
-3. **Put the expert in control** — a structured expert decision confirms the case and strengthens the nearby outbreak signal.
-4. **Coordinate the field response** — generate a representative mission and issue only the approved, versioned non-chemical advisory.
-5. **Close the loop and learn safely** — record improvement, preserve the audit chain and create governed learning evidence without automatic retraining.
+2. **Prove offline evidence before AI** — one action rejects a weak capture, guides recapture, restores sync and routes the usable report through honest triage. The linked field route provides real image and voice capture; Hindi ASR is used only when configured and regional speech remains human-reviewed.
+3. **Put the expert in control** — a structured expert decision confirms the case, creates a governed local learning record and strengthens the nearby outbreak signal.
+4. **Coordinate mission, KVK and advisory** — generate a representative mission, prepare a privacy-masked referral for the nearest sourced KVK and issue only the approved, versioned non-chemical advisory. The referral remains `READY_TO_SHARE`; external delivery is not fabricated.
+5. **Close the loop and learn safely** — record improvement, preserve the audit chain and retain expert-labelled evidence for a future evaluated model cycle without automatic retraining.
 
 The screen exposes one primary action per act. Technical and governance depth remains available through the linked operational pages without interrupting the story.
 
@@ -20,8 +20,9 @@ The screen exposes one primary action per act. Technical and governance depth re
 
 Open `/command-centre/` and look for:
 
-- one dominant Rajasthan pilot map;
-- four decision-oriented metrics rather than a wall of KPIs;
+- a compact operating header rather than a marketing landing section;
+- one dominant Rajasthan pilot map visible early in the page;
+- four mathematically defined decision metrics rather than a wall of KPIs;
 - a clear **What needs action now** rail;
 - explicit expert, mission, sync and KVK delivery state;
 - advanced filters hidden behind **Refine map view**;
@@ -29,6 +30,15 @@ Open `/command-centre/` and look for:
 - clear simulated-data and provider-state labels.
 
 The command centre is designed to answer one government operating question: **where should the next response happen, and why?**
+
+## Direct fit to the official challenge
+
+| Rajasthan feature sought | Prototype evidence |
+|---|---|
+| Offline-capable recognition for bajra, mustard, guar and cumin | Act 2, Field Capture, pixel-quality engine, browser edge provider and explicit abstention |
+| Hindi and Marwari/Mewari voice pathway | Real offline recorder; Hindi browser/Bhashini pathway when configured; regional recordings routed to human review without dialect-ASR claim |
+| Nearest KVK or input-support linkage | Act 4 nearest-KVK match, referral lifecycle, 48-hour SLA and privacy-masked evidence pack |
+| Feedback loop using local data | Act 3 expert-labelled learning record, model lifecycle and no automatic training/promotion |
 
 ## Deeper technical proof
 
@@ -71,9 +81,9 @@ The last recorded full local baseline before this evaluator-experience refactor 
 | Explainable outbreak scoring | Outbreak page and cluster breakdown |
 | Safe advisory invariants | API repository tests and locked chemical section |
 | Offline draft and idempotent sync | Field workflow, sync tests |
-| Sourced KVK routing and referral packs | Support desk and KVK reference directory |
+| Sourced KVK routing and referral packs | Act 4, Support desk and KVK reference directory |
 | Farm Digital Twin | `/digital-twins/RJ-DEMO-PLOT-118/` |
-| Governed learning without auto-training | `/learning/`, model lifecycle and learning records |
+| Governed learning without auto-training | Act 3, `/learning/`, model lifecycle and learning records |
 
 ## Known limitations
 
