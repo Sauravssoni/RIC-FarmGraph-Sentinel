@@ -51,69 +51,55 @@ export default function CommandCentre() {
   const selectedCluster = data.clusters.find((c) => c.id === selectedClusterId) ?? topCluster;
   const openReferrals = data.referrals.filter((r) => !["CLOSED", "RESPONDED"].includes(r.status));
   const activeMissions = data.missions.filter((m) => m.status !== "COMPLETED");
-  const decisionLoad = data.overview.awaitingExpert + data.overview.pendingSync;
+  const activeClusterCount = data.clusters.filter((cluster) => cluster.status !== "DISMISSED").length;
   const latestCases = [...filtered].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 7);
   const o = data.overview;
 
   return (
-    <div className="mx-auto max-w-[1480px] px-3 pb-10 pt-4 sm:px-5 sm:pt-6">
-      <section className="surface-dark overflow-hidden p-5 sm:p-7">
-        <div className="grid items-end gap-7 lg:grid-cols-[1.4fr_0.8fr]">
+    <div className="mx-auto max-w-[1480px] px-3 pb-10 pt-4 sm:px-5 sm:pt-5">
+      <section className="surface-dark px-5 py-4 sm:px-6 sm:py-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-ink-400">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-ink-400">
               <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1">Rajasthan pilot command</span>
               <span>Jodhpur · Nagaur · Jalore</span>
-              <span>·</span>
+              <span aria-hidden="true">·</span>
               <span>{fmtDateTime(data.demoNow)}</span>
             </div>
-            <h1 className="mt-5 max-w-4xl text-3xl font-extrabold tracking-[-0.035em] text-white sm:text-4xl lg:text-5xl">
-              See the risk. Verify the field. Coordinate the response.
+            <h1 className="mt-3 text-2xl font-extrabold tracking-[-0.03em] text-white sm:text-3xl">
+              Crop-health operations command centre
             </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-ink-400 sm:text-base">
-              One operational view for crop-health signals, expert decisions, outbreak clusters, field missions, KVK support and farmer follow-up. The first screen answers a single question: <strong className="text-white">what needs action today?</strong>
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-ink-400">
+              Prioritise expert decisions, outbreak verification, field missions, KVK support and farmer follow-up from one traceable operating view.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/demo" className="btn-amber">Run the 3-minute evaluator proof →</Link>
-              <Link href="/field/scan" className="inline-flex min-h-[44px] items-center rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10">Capture a field report</Link>
-            </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-ink-400">Today’s operating brief</p>
-                <p className="mt-1 text-sm font-bold text-white">Decision load and field response</p>
-              </div>
-              <span className={`chip border-white/15 ${app.apiMode === "api-connected" ? "bg-leaf-500/15 text-leaf-100" : "bg-white/5 text-ink-400"}`}>
-                <span className={`h-2 w-2 rounded-full ${app.apiMode === "api-connected" ? "bg-leaf-500" : "bg-ink-400"}`} aria-hidden="true" />
-                {app.apiMode === "api-connected" ? "Connected" : "Standalone demo"}
-              </span>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <BriefMetric value={o.awaitingExpert} label="Expert decisions" />
-              <BriefMetric value={o.highPriority} label="High-priority cases" />
-              <BriefMetric value={activeMissions.length} label="Active missions" />
-              <BriefMetric value={openReferrals.length} label="Open KVK referrals" />
-            </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <span className={`chip border-white/15 ${app.apiMode === "api-connected" ? "bg-leaf-500/15 text-leaf-100" : "bg-white/5 text-ink-400"}`} title={app.apiUrl}>
+              <span className={`h-2 w-2 rounded-full ${app.apiMode === "api-connected" ? "bg-leaf-500" : "bg-ink-400"}`} aria-hidden="true" />
+              {app.apiMode === "api-connected" ? "Connected demo backend" : "Standalone deterministic demo"}
+            </span>
+            <Link href="/field/scan" className="inline-flex min-h-[44px] items-center rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10">Capture field report</Link>
+            <Link href="/demo" className="btn-amber">Run evaluator proof →</Link>
           </div>
         </div>
       </section>
 
-      <div className="mt-4"><DemoBanner /></div>
+      <div className="mt-3"><DemoBanner /></div>
 
-      <section className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard title="Open field cases" label="Coverage" value={o.activeCases} sub="Every number drills into a traceable case." href="/cases?open=1" />
-        <KpiCard title="Items needing a decision" label="Attention" value={decisionLoad} sub={`${o.awaitingExpert} expert · ${o.pendingSync} awaiting sync`} href="/expert" tone="saffron" />
-        <KpiCard title="Active outbreak signals" label="Risk" value={o.suspectedClusters} sub="Suspected and verified clusters remain distinct." href="/outbreaks" tone="alert" />
+        <KpiCard title="Awaiting expert decision" label="Attention" value={o.awaitingExpert} sub="Structured agronomy review required." href="/expert" tone="saffron" />
+        <KpiCard title="Active outbreak signals" label="Risk" value={activeClusterCount} sub="Suspected and verified signals; dismissed clusters excluded." href="/outbreaks" tone="alert" />
         <KpiCard title="Follow-up completion" label="Response" value={`${o.followUpCompletionPct}%`} sub={`${o.resolvedOrImproving} cases improving or resolved`} href="/cases?state=RESOLVED" tone="leaf" />
       </section>
 
-      <section className="mt-6">
+      <section className="mt-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="eyebrow">District risk picture</p>
             <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-ink-950">Where the next response should happen</h2>
-            <p className="mt-1 text-sm text-ink-500">Map first, decisions second. Technical filters stay available without dominating the screen.</p>
+            <p className="mt-1 text-sm text-ink-500">Map first, decisions second. Technical filters remain available without dominating the screen.</p>
           </div>
           <details className="group relative">
             <summary className="btn-secondary cursor-pointer list-none">Refine map view <span aria-hidden="true">⌄</span></summary>
@@ -158,7 +144,7 @@ export default function CommandCentre() {
                     <h4 className="mt-1 text-base font-extrabold text-ink-950">{selectedCluster.name}</h4>
                   </div>
                   <span className={`chip ${selectedCluster.status === "VERIFIED" ? "border-alert-600/40 bg-alert-100 text-alert-700" : selectedCluster.status === "DISMISSED" ? "border-sand-300 bg-sand-100 text-ink-500" : "border-saffron-500/40 bg-saffron-100 text-saffron-700"}`}>
-                    {selectedCluster.status}
+                    {formatStatus(selectedCluster.status)}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">
@@ -243,13 +229,12 @@ export default function CommandCentre() {
   );
 }
 
-function BriefMetric({ value, label }: { value: string | number; label: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.055] p-3">
-      <p className="text-2xl font-extrabold tracking-tight text-white tabular-nums">{value}</p>
-      <p className="mt-1 text-xs font-semibold text-ink-400">{label}</p>
-    </div>
-  );
+function formatStatus(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function MiniMetric({ value, label }: { value: string | number; label: string }) {

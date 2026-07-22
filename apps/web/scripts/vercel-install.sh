@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Vercel currently enters this project at apps/web. Pin the npm runtime before
-# installing the repository workspaces and replace stale/custom registry hosts
-# from the committed lockfile with the public npm registry.
+# Vercel enters this project at apps/web. Node 20.x and npm 10.x are pinned in
+# package.json; this script only normalises the registry and installs the root
+# workspaces. Avoid a global npm self-upgrade inside the constrained build VM.
 export npm_config_registry="https://registry.npmjs.org/"
 export npm_config_replace_registry_host="always"
 
-npm install --global npm@10.8.2 --no-audit --no-fund
+printf 'FarmGraph Vercel runtime: node=%s npm=%s\n' "$(node --version)" "$(npm --version)"
 cd ../..
 npm install --workspaces --include-workspace-root --no-audit --no-fund --prefer-online

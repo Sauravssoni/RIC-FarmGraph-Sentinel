@@ -27,7 +27,7 @@ const ACTS: ProofAct[] = [
   {
     number: "01",
     title: "See the operational picture",
-    outcome: "Begin at the command centre: statewide risk, expert decisions, outbreak signals and field response are visible in one screen.",
+    outcome: "Begin at the command centre: pilot-district risk, expert decisions, outbreak signals and field response are visible in one screen.",
     judges: "This is not a dashboard of vanity metrics. Every number leads to a case, cluster, mission or outcome.",
     link: { href: "/command-centre", label: "Open command centre" },
   },
@@ -36,7 +36,7 @@ const ACTS: ProofAct[] = [
     title: "Prove evidence quality before AI",
     outcome: "Run one proof to reject a poor capture, guide recapture, restore connectivity and route the usable report through honest triage.",
     judges: "Weak evidence is refused with specific guidance. Offline work survives, sync is explicit and uncertainty remains visible.",
-    link: { href: "/field/scan", label: "Open field capture" },
+    link: { href: "/field/scan", label: "Try real field capture" },
   },
   {
     number: "03",
@@ -65,6 +65,7 @@ export default function DemoController() {
   const store = getStore();
   const [mode, setMode] = useState<Mode>("golden");
   const [act, setAct] = useState(0);
+  const [overviewSeen, setOverviewSeen] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const golden = useDemoStore((s) => s.getState().cases.find((c) => c.id === GOLDEN));
   const cluster = useDemoStore((s) => s.clustersWithScores().find((c) => c.id === CLUSTER));
@@ -74,16 +75,22 @@ export default function DemoController() {
   const say = (message: string) => setLog((items) => [...items, message]);
 
   const done = useMemo(() => {
-    if (!golden) return [true, false, false, false, false];
+    if (!golden) return [overviewSeen, false, false, false, false];
     const hasMission = missions.some((m) => m.clusterId === CLUSTER);
     return [
-      true,
+      overviewSeen,
       golden.observations.some((o) => !o.quality.passed) && golden.observations.some((o) => o.quality.passed) && golden.diagnosis !== null,
       golden.reviews.some((r) => r.decision === "confirm"),
       hasMission && golden.advisoryRef !== null,
       golden.followUps.length > 0,
     ];
-  }, [golden, missions]);
+  }, [golden, missions, overviewSeen]);
+
+  const beginProof = () => {
+    if (overviewSeen) return;
+    setOverviewSeen(true);
+    say("Operational picture acknowledged → every KPI remains linked to underlying evidence and action.");
+  };
 
   const runEvidenceProof = () => {
     let current = currentGolden();
@@ -106,14 +113,14 @@ export default function DemoController() {
         symptomNote: "Recapture: lower leaf surface + whole plant, good light",
         checklist: FULL,
       });
-      say("Guided recapture passed → offline report synced → READY_FOR_TRIAGE.");
+      say("Guided recapture passed → offline report synced → ready for triage.");
     }
 
     current = currentGolden();
     if (current && !current.diagnosis) {
       const diagnosis = store.triage(GOLDEN);
       if (diagnosis) {
-        say(`Honest triage → ${diagnosis.candidates.map((c) => `${c.conditionId} ${c.simConfidence}`).join(" / ")} → AWAITING_EXPERT.`);
+        say(`Honest triage → ${diagnosis.candidates.map((c) => `${c.conditionId} ${c.simConfidence}`).join(" / ")} → expert review required.`);
       }
     }
   };
@@ -141,7 +148,7 @@ export default function DemoController() {
     const refreshed = currentGolden();
     if (refreshed && !refreshed.advisoryRef) {
       store.issueAdvisory(GOLDEN, "ADV-2601-v0.3");
-      say("Approved advisory issued → non-chemical action only → chemical section remains LOCKED.");
+      say("Approved advisory issued → non-chemical action only → chemical section remains locked.");
     }
   };
 
@@ -152,11 +159,11 @@ export default function DemoController() {
       status: "improving",
       note: "Roguing done; no new streaking on re-visit (simulated follow-up)",
     });
-    say("Five-day follow-up recorded → IMPROVING → outcome and audit trail updated.");
+    say("Five-day follow-up recorded → improving → outcome and audit trail updated.");
   };
 
   const actions: Array<null | { label: string; run: () => void }> = [
-    null,
+    { label: "Begin evaluator proof", run: beginProof },
     { label: "Run evidence-quality proof", run: runEvidenceProof },
     { label: "Record expert verification", run: runExpertProof },
     { label: "Launch field response", run: runResponseProof },
@@ -166,7 +173,8 @@ export default function DemoController() {
   const reset = () => {
     store.reset();
     void apiDemoReset();
-    setLog(["Demo reset — deterministic seed restored."]);
+    setOverviewSeen(false);
+    setLog([]);
     setAct(0);
   };
 
@@ -177,28 +185,29 @@ export default function DemoController() {
 
   return (
     <div className="mx-auto max-w-[1320px] px-3 pb-10 pt-4 sm:px-5 sm:pt-6">
-      <section className="surface-dark overflow-hidden p-5 sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+      <section className="surface-dark px-5 py-5 sm:px-6">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-saffron-500">Evaluator mode</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-saffron-500">Evaluator mode</p>
+              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink-400">Deterministic · resettable · traceable</span>
+            </div>
             <h1 className="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-white sm:text-4xl">The complete proof in five acts.</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-ink-400 sm:text-base">
-              A linear, repeatable walkthrough from statewide risk to field evidence, expert verification, outbreak response and measured outcome. One primary action per act; deeper technical proof stays available without cluttering the story.
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-400">
+              Pilot-district risk → field evidence → expert verification → coordinated response → measured outcome. One primary action per act; deeper technical proof stays secondary.
             </p>
           </div>
-          <button type="button" className="inline-flex min-h-[44px] items-center rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/10" onClick={reset}>↺ Reset proof</button>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <HeroProof value="5" label="Outcome-led acts" />
-          <HeroProof value="3 min" label="Evaluator path" />
-          <HeroProof value="100%" label="Traceable demo data" />
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <ProofBadge value="5 acts" />
+            <ProofBadge value="≈3 minutes" />
+            <button type="button" className="inline-flex min-h-[44px] items-center rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/10" onClick={reset}>↺ Reset proof</button>
+          </div>
         </div>
       </section>
 
-      <div className="mt-4"><DemoBanner /></div>
+      <div className="mt-3"><DemoBanner /></div>
 
-      <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Demo mode">
+      <div className="mt-4 flex flex-wrap gap-2" role="tablist" aria-label="Demo mode">
         <button type="button" role="tab" aria-selected={mode === "golden"} onClick={() => setMode("golden")} className={`btn-secondary ${mode === "golden" ? "!border-ink-900 !bg-ink-900 !text-white" : ""}`}>Primary evaluator proof</button>
         <button type="button" role="tab" aria-selected={mode === "negative"} onClick={() => setMode("negative")} className={`btn-secondary ${mode === "negative" ? "!border-ink-900 !bg-ink-900 !text-white" : ""}`}>Stress tests</button>
         <button type="button" role="tab" aria-selected={mode === "govinfra"} onClick={() => setMode("govinfra")} className={`btn-secondary ${mode === "govinfra" ? "!border-ink-900 !bg-ink-900 !text-white" : ""}`}>Government infrastructure</button>
@@ -209,7 +218,7 @@ export default function DemoController() {
 
       {mode === "golden" && (
         <>
-          <div className="mt-5 grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <div className="mt-4 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
             <aside className="card p-3">
               <div className="px-2 pb-3 pt-1">
                 <div className="flex items-center justify-between gap-3">
@@ -283,12 +292,12 @@ export default function DemoController() {
                       <p className="eyebrow">Golden case live state</p>
                       <p className="mt-2 font-mono text-xs font-extrabold text-ink-950">C-2614</p>
                       <div className="mt-4 space-y-3">
-                        <LiveStateRow label="Case state" value={golden.state} />
+                        <LiveStateRow label="Case state" value={humanState(golden.state)} technical={golden.state} />
                         <LiveStateRow label="Observations" value={golden.observations.length} />
                         <LiveStateRow label="Expert reviews" value={golden.reviews.length} />
                         <LiveStateRow label="Follow-ups" value={golden.followUps.length} />
                         <LiveStateRow label="Cluster score" value={cluster?.score.score ?? "—"} />
-                        <LiveStateRow label="Cluster status" value={cluster?.status ?? "—"} />
+                        <LiveStateRow label="Cluster status" value={humanState(cluster?.status ?? "—")} technical={cluster?.status} />
                         <LiveStateRow label="Verified share" value={`${cluster?.score.verifiedCount ?? 0}/${cluster?.score.memberCount ?? 0}`} />
                       </div>
                     </section>
@@ -321,20 +330,24 @@ export default function DemoController() {
   );
 }
 
-function HeroProof({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.055] p-4">
-      <p className="text-2xl font-extrabold tracking-tight text-white">{value}</p>
-      <p className="mt-1 text-xs font-semibold text-ink-400">{label}</p>
-    </div>
-  );
+function ProofBadge({ value }: { value: string }) {
+  return <span className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-extrabold text-white">{value}</span>;
 }
 
-function LiveStateRow({ label, value }: { label: string; value: string | number }) {
+function humanState(value: string): string {
+  if (value === "—") return value;
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function LiveStateRow({ label, value, technical }: { label: string; value: string | number; technical?: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-sand-200 pb-2 last:border-0 last:pb-0">
+    <div className="flex items-center justify-between gap-3 border-b border-sand-200 pb-2 last:border-0 last:pb-0" title={technical}>
       <span className="text-xs font-semibold text-ink-500">{label}</span>
-      <span className="text-xs font-extrabold text-ink-950 tabular-nums">{value}</span>
+      <span className="text-right text-xs font-extrabold text-ink-950 tabular-nums">{value}</span>
     </div>
   );
 }
