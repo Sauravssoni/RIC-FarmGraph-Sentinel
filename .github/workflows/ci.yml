@@ -149,8 +149,8 @@ jobs:
           WEB: ${{ needs.web.result }}
           API: ${{ needs.api.result }}
           E2E: ${{ needs.e2e.result }}
-          CONNECTED: ${{ needs.connected-e2e.result }}
-          SUBPATH: ${{ needs.e2e-subpath.result }}
+          CONNECTED: ${{ needs['connected-e2e'].result }}
+          SUBPATH: ${{ needs['e2e-subpath'].result }}
         run: |
           printf '{\n  "commit": "%s",\n  "node": "24.x",\n  "web": "%s",\n  "api": "%s",\n  "e2e": "%s",\n  "connected_e2e": "%s",\n  "subpath_e2e": "%s"\n}\n' \
             "$GITHUB_SHA" "$WEB" "$API" "$E2E" "$CONNECTED" "$SUBPATH" | tee release-gate.json
