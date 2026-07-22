@@ -1,0 +1,11 @@
+{
+  "release": "ric-farmgraph-final",
+  "sourceHead": "cafcf14c87cb48c26eae35967a27a70142075d39",
+  "includes": {
+    "node": "24.x",
+    "releaseProofNullabilityFix": true,
+    "dashboardRedesign": true,
+    "fiveActJudgeMode": true
+  },
+  "triggeredAt": "2026-07-22T08:45:00Z"
+}
