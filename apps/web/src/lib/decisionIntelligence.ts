@@ -127,7 +127,10 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
   const averageTemporalGrowth = activeClusters.length
     ? activeClusters.reduce((sum, item) => sum + item.seedSignals.temporalGrowth, 0) / activeClusters.length
     : 0;
-  const growthUplift = clamp(averageTemporalGrowth * 0.35, 0, 0.45);
+  const averageWeatherSuitability = activeClusters.length
+    ? activeClusters.reduce((sum, item) => sum + item.weatherSuitability, 0) / activeClusters.length
+    : 0;
+  const growthUplift = clamp(averageTemporalGrowth * 0.25 + averageWeatherSuitability * 0.15, 0, 0.45);
   const forecast = [1, 2, 3].map((day): SignalTrendPoint => ({
     label: `+${day}d`,
     value: Math.max(0, Math.round(baselineDailySignals * (1 + growthUplift * (day / 3)))),
@@ -242,7 +245,14 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
   const actions = candidates
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
     .slice(0, 3)
-    .map(({ score: _score, ...item }) => item);
+    .map((item): RecommendedAction => ({
+      id: item.id,
+      priority: item.priority,
+      title: item.title,
+      detail: item.detail,
+      evidence: item.evidence,
+      href: item.href,
+    }));
 
   return {
     generatedAt: new Date(safeNow).toISOString(),
@@ -256,7 +266,7 @@ export function buildDecisionIntelligence(input: DecisionIntelligenceInput): Dec
     signalTrend: [...observed, ...forecast],
     actions,
     assumptions: [
-      "Forecast uses the last three observed days, open-case baseline and the average temporal-growth signal from active clusters.",
+      "Forecast uses the last three observed days, open-case baseline, active-cluster temporal growth and the cluster weather-suitability signal. Weather remains labelled by its live, cached or simulated adapter state.",
       "Expert-load forecast adds the current ranked queue to the expected share of new reports needing structured review.",
       "Operator-time avoidance is an explicit planning estimate: queue ranking 5 min/case, evidence/duplicate checks 4 min/case, cluster synthesis 10 min/cluster, KVK pack preparation 8 min/referral and 12 min per batched mission stop.",
       "All values use the deterministic pilot dataset and are not represented as field-validated impact.",
