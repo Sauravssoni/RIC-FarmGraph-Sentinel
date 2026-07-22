@@ -4,7 +4,7 @@
 
 Tell one operational story. Do not tour every page. Use the five proof acts in `/demo/`, and open a deeper screen only when it strengthens the current act.
 
-## 0:00–0:20 — Act 1: See the operational picture
+## 0:00–0:18 — Act 1: See the operational picture
 
 **On screen:** `/command-centre/`
 
@@ -14,13 +14,13 @@ Tell one operational story. Do not tour every page. Use the five proof acts in `
 
 Show only:
 
-- the Rajasthan pilot map;
+- the three-district Rajasthan pilot map;
 - four decision metrics;
 - the highest-priority case;
 - the selected outbreak cluster;
 - expert, mission, sync and KVK delivery state.
 
-## 0:20–0:45 — Act 2: Prove evidence quality before AI
+## 0:18–0:45 — Act 2: Prove offline evidence before AI
 
 **On screen:** `/demo/`, Act 2.
 
@@ -28,7 +28,7 @@ Click **Run evidence-quality proof**.
 
 **Say:**
 
-“A weak image is rejected before any diagnosis. The farmer receives precise recapture guidance, the report survives offline, sync is explicit and the usable evidence routes through an uncertainty-aware edge provider.”
+“A weak image is rejected before any diagnosis. The farmer receives precise recapture guidance, the report survives offline, sync is explicit and the usable evidence routes through an uncertainty-aware edge provider. The real field route also records image and voice evidence offline; Hindi transcription is optional, while regional speech remains human-reviewed.”
 
 Point to:
 
@@ -36,7 +36,8 @@ Point to:
 - guided recapture;
 - offline-to-connected state;
 - candidate labels and uncertainty;
-- `AWAITING_EXPERT`.
+- expert-review-required state;
+- the **Try real image + voice capture** link.
 
 ## 0:45–1:05 — Act 3: Put the expert in control
 
@@ -44,50 +45,53 @@ Click **Record expert verification**.
 
 **Say:**
 
-“Consequential action remains expert-controlled. The reviewer can confirm, correct, request recapture, mark unknown or require a field visit. This confirmation also strengthens the nearby outbreak signal.”
+“Consequential action remains expert-controlled. The reviewer can confirm, correct, request recapture, mark unknown or require a field visit. This confirmation strengthens the nearby outbreak signal and creates an expert-labelled learning record, but no model retrains itself.”
 
 Point to:
 
 - structured expert decision;
 - case state change;
+- learning-record count;
 - cluster score and status change;
 - audit continuity.
 
-## 1:05–1:30 — Act 4: Coordinate the field response
+## 1:05–1:32 — Act 4: Coordinate mission, KVK and advisory
 
-Click **Launch field response**.
+Click **Launch field + KVK response**.
 
 **Say:**
 
-“FarmGraph turns verified signals into an operational response. It creates a representative field mission, routes the case toward the nearest sourced KVK and issues only the approved, versioned non-chemical advisory.”
+“FarmGraph turns a verified signal into a coordinated response. It creates a representative field mission, matches the case to the nearest sourced KVK, prepares a privacy-masked referral pack with a 48-hour SLA and issues only the approved, versioned non-chemical advisory.”
 
 Point to:
 
 - generated mission ID and route;
-- KVK support path;
+- generated referral ID;
+- `READY TO SHARE` status rather than a false delivery claim;
+- nearest-KVK distance and support link;
 - advisory version;
 - chemical section remaining locked.
 
-## 1:30–1:50 — Act 5: Close the loop and learn safely
+## 1:32–1:52 — Act 5: Close the loop and learn safely
 
 Click **Record measured outcome**.
 
 **Say:**
 
-“Five days later, the outcome is recorded. Improvement or non-improvement changes the operational state, and every expert decision becomes governed learning evidence without automatic retraining.”
+“Five days later, the outcome is recorded. Improvement or non-improvement changes the operational state, and the expert-labelled evidence remains available for a future evaluated model cycle without automatic training or promotion.”
 
 Point to:
 
-- `IMPROVING` state;
+- improving state;
 - follow-up count;
 - audit log;
-- learning/governance link.
+- learning evidence link.
 
-## 1:50–2:00 — Close
+## 1:52–2:00 — Close
 
 **Say:**
 
-“An image model can detect a signal. FarmGraph Rakshak is the operating system that helps Rajasthan verify it, coordinate the response and learn safely from every field.”
+“An image model can detect a signal. FarmGraph Rakshak is the operating system that helps Rajasthan verify it, connect local expertise, coordinate the response and learn safely from every field.”
 
 ## Optional backup proof
 
