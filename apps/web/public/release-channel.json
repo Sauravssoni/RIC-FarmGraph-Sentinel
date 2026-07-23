@@ -1,0 +1,11 @@
+{
+  "schema": "farmgraph-release-channel/v1",
+  "channel": "production",
+  "project": "FarmGraph Rakshak",
+  "submission": "Rajasthan Innovation Challenge",
+  "portalStatus": "submitted",
+  "releasePurpose": "post-submission deployment verification",
+  "productionUrl": "https://ric-farm-graph-sentinel-web.vercel.app/",
+  "sourceBranch": "main",
+  "verification": "apps/web/scripts/verify-static-release.mjs"
+}
