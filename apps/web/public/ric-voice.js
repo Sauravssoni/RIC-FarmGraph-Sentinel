@@ -6,6 +6,7 @@
   const script = document.currentScript || document.querySelector("script[data-ric-project]");
   const project = (script && script.getAttribute("data-ric-project")) || "";
   const endpoint = "/_ric-voice";
+  const uri = verb => endpoint + "/" + verb + (project === "farmgraph" || project === "agrisetu" ? "/" : "");
   const config = {
     urvara: [
       ["Run fertilizer jury mission", ["demo","jury","mission","डेमो","प्रदर्शन","शुरू"], "#jury", "", ""],
@@ -31,8 +32,8 @@
     ],
     sakhi: [
       ["Find suitable women's work",["women","work","job","employment","महिला","नौकरी","काम"],"","","Women Discovery"],
-      ["Review employer safety",["safety","employer","trust","सुरक्षा","नियोक्ता"],"","","Employer"],
-      ["Review childcare and travel",["childcare","travel","transport","बच्चे","यात्रा"],"","","Mobility"]
+      ["Review employer safety",["safety","employer","trust","सुरक्षा","नियोक्ता"],"","","Trust & Safety"],
+      ["Review childcare and travel",["childcare","travel","transport","बच्चे","यात्रा"],"","","Care & Mobility Map"]
     ],
     jal: [
       ["Open groundwater evaluator",["demo","evaluator","water","groundwater","जल","पानी"],"","/evaluator",""],
@@ -79,9 +80,9 @@
       ["Review district intelligence",["district","forecast","risk","जिला","जोखिम"],"","","Intelligence"]
     ],
     heritage: [
-      ["Run heritage crowd scenario",["demo","demand","recovery","डेमो","भीड़"],"","","Demand Recovery"],
-      ["Analyze visitor load",["forecast","capacity","footfall","पर्यटक","क्षमता"],"","","Forecast"],
-      ["Review conservation actions",["heritage","conservation","clean","संरक्षण","सफाई"],"","","Conservation"]
+      ["Run heritage crowd scenario",["demo","demand","recovery","डेमो","भीड़"],"","","Start guided incident replay"],
+      ["Analyze visitor load",["forecast","capacity","footfall","पर्यटक","क्षमता"],'[data-view="recovery"]',"",""],
+      ["Review conservation actions",["heritage","conservation","clean","संरक्षण","सफाई"],'[data-view="cleanliness"]',"",""]
     ],
     drone: [
       ["Enter drone services MVP",["demo","prototype","start","डेमो","शुरू"],"","","Enter MVP Prototype"],
@@ -115,7 +116,7 @@
    '<small>Consent-based speech input. Oracle Whisper returns an UNVERIFIED transcript; edit it before running any action. No Government decision occurs automatically.</small>'+
    '<label for="ricv-lang">Spoken language</label><select id="ricv-lang"></select>'+
    '<label class="consent"><input id="ricv-consent" type="checkbox"><span>I agree to send one short audio clip to Syntheon’s Oracle ASR for temporary transcription.</span></label>'+
-   '<div class="controls"><button id="ricv-record" class="primary">● Record</button><button id="ricv-stop" disabled>■ Stop</button><button id="ricv-refresh">Check Oracle</button></div>'+
+   '<div class="controls"><button id="ricv-record" class="primary">● Record</button><button id="ricv-stop" disabled>■ Stop</button><button id="ricv-refresh">Check Oracle</button><label for="ricv-file" style="cursor:pointer;border:1px solid #345775;border-radius:9px;padding:9px;background:#edf5fa">Choose audio clip</label><input id="ricv-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg" style="max-width:100%;font-size:11px" aria-label="Upload an existing audio clip"></div>'+
    '<label for="ricv-transcript">Review or correct transcript</label><textarea id="ricv-transcript" placeholder="Your editable transcript appears here. You can also type a command."></textarea>'+
    '<label for="ricv-action">Approved dashboard workflow</label><select id="ricv-action"></select>'+
    '<div class="controls"><button id="ricv-run" class="primary">Run selected native workflow</button><button id="ricv-close">Close</button></div>'+
@@ -133,7 +134,7 @@
   function updateGuess(){const ix=guessed(get("ricv-transcript").value);if(act.value==="auto"){setStatus(ix>=0?"Suggested action: "+actions[ix][0]+". Verify and press Run.":"Transcript ready; choose a supported workflow from the list or rephrase.");}}
   get("ricv-transcript").addEventListener("input",updateGuess);
   async function checkCapability(){
-    try {const r=await fetch(endpoint+"/capabilities",{method:"GET",cache:"no-store",credentials:"same-origin"});
+    try {const r=await fetch(uri("capabilities"),{method:"GET",cache:"no-store",credentials:"same-origin"});
       if(!r.ok)throw Error("gateway HTTP "+r.status);
       const j=await r.json();setStatus(j.available?"Oracle ASR online. Consent and tap Record.":"Oracle reached but Whisper unavailable. Typed commands remain usable.");
       return !!j.available;
@@ -155,22 +156,22 @@
       recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
       recorder.onerror=()=>{setStatus("Recording failed; retry or type.");release();state(false)};
       recorder.onstop=async()=>{const blob=new Blob(chunks,{type:recorder?.mimeType||mime||"audio/webm"});chunks=[];release();state(false);await transcribe(blob)};
-      recorder.start();state(true);setStatus("Recording… speak clearly. Automatically stops at 14 seconds.");
+      recorder.start(250);state(true);setStatus("Recording… speak clearly. Automatically stops at 14 seconds.");
       clipTimer=setTimeout(stop,14000);
     }catch(e){release();state(false);setStatus(e.name==="NotAllowedError"?"Microphone denied. Enable it in browser site settings and retry.":"Microphone error: "+String(e.name||e.message||e))}
   }
-  function stop(){if(recorder&&recorder.state==="recording"){setStatus("Preparing audio…");recorder.stop()}else{release();state(false)}}
+  function stop(){if(recorder&&recorder.state==="recording"){setStatus("Preparing audio…");try{recorder.requestData()}catch{}recorder.stop()}else{release();state(false)}}
   async function transcribe(blob){
     if(blob.size<200){setStatus("No audio received. Please record again.");return;}
     if(blob.size>2500000){setStatus("Clip exceeded Oracle's 2.5 MB maximum. Please record a shorter clip.");return;}
     const lang=lng.value;
-    const mime=blob.type.includes("mp4")?"audio/mp4":blob.type.includes("ogg")?"audio/ogg":"audio/webm";
-    const ext=mime==="audio/mp4"?"m4a":mime==="audio/ogg"?"ogg":"webm";
+    const mime=blob.type.includes("mp4")?"audio/mp4":blob.type.includes("ogg")?"audio/ogg":blob.type.includes("mpeg")?"audio/mpeg":blob.type.includes("wav")?"audio/wav":"audio/webm";
+    const ext=mime==="audio/mp4"?"m4a":mime==="audio/ogg"?"ogg":mime==="audio/wav"?"wav":mime==="audio/mpeg"?"mp3":"webm";
     const fd=new FormData();fd.append("file",blob,"ric_voice."+ext);
     setStatus("Transcribing through Oracle Whisper… audio is not saved by this app.");
     const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),150000);
     try{
-      const r=await fetch(endpoint+"/transcribe?consent=true&lang="+encodeURIComponent(lang),{method:"POST",body:fd,signal:controller.signal,credentials:"same-origin",cache:"no-store"});
+      const r=await fetch(uri("transcribe")+"?consent=true&lang="+encodeURIComponent(lang),{method:"POST",body:fd,signal:controller.signal,credentials:"same-origin",cache:"no-store"});
       let j={};try{j=await r.json()}catch{}
       if(!r.ok){throw Error("Oracle HTTP "+r.status+" "+String(j.detail||""));}
       const word=String(j.text||"").slice(0,1000);
@@ -210,6 +211,7 @@
     get("ricv-record").addEventListener("click",record);
     get("ricv-stop").addEventListener("click",stop);
     get("ricv-refresh").addEventListener("click",checkCapability);
+    get("ricv-file").addEventListener("change",async()=>{const file=get("ricv-file").files?.[0];if(!file)return;if(!get("ricv-consent").checked){setStatus("Explicit consent required before uploading audio.");return;}if(!/^audio\//.test(file.type) && !/\.(wav|mp3|m4a|webm|ogg)$/i.test(file.name)){setStatus("Unsupported audio type.");return;}await transcribe(file);});
     get("ricv-run").addEventListener("click",run);
     document.addEventListener("visibilitychange",()=>{if(document.hidden&&active)stop()});
     window.addEventListener("pagehide",release);
