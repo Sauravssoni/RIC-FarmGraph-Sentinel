@@ -3,5 +3,26 @@
   "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "out",
-  "trailingSlash": true
+  "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/_ric-voice/:path*",
+      "destination": "https://seva.syntheontech.com/api/v1/voice/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/_ric-voice/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
 }

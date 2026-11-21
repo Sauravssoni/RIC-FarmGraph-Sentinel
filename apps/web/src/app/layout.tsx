@@ -24,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Providers>{children}</Providers>
+      <script defer src={withBase("/ric-voice.js")} data-ric-project="farmgraph" />
       </body>
     </html>
   );
