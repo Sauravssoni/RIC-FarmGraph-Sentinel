@@ -6,6 +6,10 @@
   "trailingSlash": true,
   "rewrites": [
     {
+      "source": "/_ric-voice/:path*/",
+      "destination": "https://seva.syntheontech.com/api/v1/voice/:path*"
+    },
+    {
       "source": "/_ric-voice/:path*",
       "destination": "https://seva.syntheontech.com/api/v1/voice/:path*"
     }
