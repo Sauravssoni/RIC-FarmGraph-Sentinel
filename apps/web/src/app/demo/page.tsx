@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DemoBanner } from "@/components/bits";
 import GovInfraPath from "@/components/GovInfraPath";
 import NegativePath from "@/components/NegativePath";
@@ -79,7 +79,10 @@ export default function DemoController() {
   const referral = referrals.find((item) => item.caseId === GOLDEN);
   const caseLearningRecords = learningRecords.filter((item) => item.caseId === GOLDEN);
 
-  const done = useMemo(() => {
+  // The demo store mutates nested case objects in place. Recompute from the
+  // current subscribed state on each render, rather than memoizing on stable
+  // nested object identities (which otherwise leave progress at 1/5).
+  const done = (() => {
     if (!golden) return [overviewSeen, false, false, false, false];
     const hasMission = missions.some((m) => m.clusterId === CLUSTER);
     const hasReferral = referrals.some((item) => item.caseId === GOLDEN);
@@ -91,7 +94,7 @@ export default function DemoController() {
       hasMission && hasReferral && golden.advisoryRef !== null,
       golden.followUps.length > 0 && hasLearningRecord,
     ];
-  }, [golden, learningRecords, missions, overviewSeen, referrals]);
+  })();
 
   const beginProof = () => {
     if (overviewSeen) return;
