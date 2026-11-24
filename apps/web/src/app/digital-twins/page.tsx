@@ -61,12 +61,12 @@ export default function DigitalTwinsPage() {
       </section>
       <section className="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-sand-200 bg-white p-3" aria-label="Filter digital twins">
         <label className="text-xs font-bold text-ink-700">District
-          <select value={district} onChange={(e) => setDistrict(e.target.value)} className="mt-1 block min-h-[44px] rounded-lg border border-sand-300 bg-white px-3 text-sm text-ink-950">
+          <select aria-label="District" value={district} onChange={(e) => setDistrict(e.target.value)} className="mt-1 block min-h-[44px] rounded-lg border border-sand-300 bg-white px-3 text-sm text-ink-950">
             <option>All districts</option>{districts.map((d) => <option key={d}>{d}</option>)}
           </select>
         </label>
         <label className="text-xs font-bold text-ink-700">Twin state
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block min-h-[44px] rounded-lg border border-sand-300 bg-white px-3 text-sm text-ink-950">
+          <select aria-label="Twin state" value={status} onChange={(e) => setStatus(e.target.value)} className="mt-1 block min-h-[44px] rounded-lg border border-sand-300 bg-white px-3 text-sm text-ink-950">
             <option>All states</option>{states.map((s) => <option key={s} value={s}>{TWIN_STATE_META[s].label}</option>)}
           </select>
         </label>
